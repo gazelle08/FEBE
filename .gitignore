@@ -1,0 +1,25 @@
+# .gitignore
+
+# Node modules
+node_modules/
+
+# Dotenv file
+.env
+
+# Log files
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE-specific files (contoh: VS Code)
+.vscode/
+
+# Compiled JavaScript (if you transpile)
+/dist/
+/build/
+
+# Database specific files
+*.sqlite
+*.db
