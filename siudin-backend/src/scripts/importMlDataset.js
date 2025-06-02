@@ -3,29 +3,24 @@ const fs = require('fs');
 const { parse } = require('csv-parse');
 const path = require('path');
 const db = require('../config/database');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') }); // Pastikan .env terload
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
-// PASTIKAN UNTUK MENYESUAIKAN PATH FILE CSV ANDA DI SINI
-// Contoh: jika file CSV Anda ada di root folder proyek (di luar siudin-backend/src)
 const csvFilePath = path.resolve(__dirname, 'Dataset SIUDIN - Final.csv');
-// Jika file CSV ada di folder siudin-backend/src/scripts:
-// const csvFilePath = path.resolve(__dirname, './Dataset SIUDIN.xlsx - Final.csv');
-
 
 async function importMlDataset() {
   console.log(`Starting import from: ${csvFilePath}`);
+  let connection;
   try {
-    // Memastikan koneksi database aktif sebelum memulai import
-    await db.getConnection();
+    connection = await db.getConnection();
     console.log('Database connection tested successfully.');
 
     const records = [];
     const parser = fs
       .createReadStream(csvFilePath)
       .pipe(parse({
-        columns: true, // Treat the first row as column names (headers)
+        columns: true,
         skip_empty_lines: true,
-        trim: true // Trim whitespace from values
+        trim: true
       }));
 
     for await (const record of parser) {
@@ -39,79 +34,91 @@ async function importMlDataset() {
       process.exit(0);
     }
 
-    // Start a transaction for bulk insert
-    await db.beginTransaction();
+    await connection.beginTransaction();
     console.log('Transaction started.');
 
     let insertedCount = 0;
     for (const record of records) {
-      // --- SESUAIKAN BAGIAN INI DENGAN STRUKTUR KOLOM CSV DAN TABEL MYSQL ANDA ---
-      // Sesuaikan dengan kolom di Dataset SIUDIN.xlsx - Final.csv
-      const {
-        'id': moduleId, // Asumsi kolom ID modul di CSV bernama 'id'
-        'Title': title,
-        'Description': description,
-        'Difficulty': difficulty,
-        'Topic': topic,
-        'Class Level': classLevel, // Perhatikan spasi di nama kolom
-        'Video URL': videoUrl, // Jika ada kolom video URL di CSV
-        'ML_Features': mlFeaturesJson // Kolom yang mungkin berisi string JSON
-      } = record;
+      const jenjang = record['Jenjang'];
+      const mataPelajaran = record['Mata Pelajaran'];
+      const materi = record['Materi'];
+      const subMateri = record['Sub Materi'];
+      const link = record['Link'];
 
-      // Periksa apakah moduleId ada dan valid (numeric)
-      const parsedModuleId = parseInt(moduleId, 10);
-      if (isNaN(parsedModuleId)) {
-          console.warn(`Skipping record due to invalid Module ID: ${moduleId}. Record:`, record);
-          continue; // Skip this record
+      // Derived fields
+      const title = `${mataPelajaran} - ${materi} (${subMateri})`;
+      const description = `Materi pembelajaran ${materi} dengan sub-materi ${subMateri}.`;
+      const videoUrl = link || null;
+      const classLevel = jenjang;
+      const topic = mataPelajaran;
+
+      let difficulty;
+      const parsedJenjang = parseInt(jenjang, 10);
+      if (isNaN(parsedJenjang)) {
+        difficulty = 'Unknown';
+      } else if (parsedJenjang >= 7 && parsedJenjang <= 8) {
+        difficulty = 'Easy';
+      } else if (parsedJenjang >= 9 && parsedJenjang <= 11) {
+        difficulty = 'Medium';
+      } else if (parsedJenjang === 12) {
+        difficulty = 'Hard';
+      } else {
+        difficulty = 'Unknown';
       }
 
-      // Konversi ml_features dari string JSON ke objek JavaScript (jika ada)
-      let parsedMlFeatures = null;
-      try {
-        if (mlFeaturesJson) {
-          parsedMlFeatures = JSON.parse(mlFeaturesJson);
-        }
-      } catch (jsonError) {
-        console.warn(`Warning: Could not parse ml_features for module_id ${moduleId}. Error: ${jsonError.message}`);
-        parsedMlFeatures = null; // Set to null if parsing fails
-      }
+      // --- PERSIAPAN UNTUK 'ml_features' ---
+      // Saat ini 'ml_features' akan tetap null karena tidak ada di CSV yang diberikan.
+      // Jika tim ML menambahkan kolom 'ml_features' (misalnya, sebagai string JSON)
+      // ke CSV di masa depan, Anda bisa membaca kolom tersebut di sini:
+      // const mlFeaturesRaw = record['Nama_Kolom_ML_Features_Baru_Dari_CSV'];
+      // let mlFeatures = null;
+      // try {
+      //   if (mlFeaturesRaw) {
+      //     mlFeatures = JSON.parse(mlFeaturesRaw);
+      //   }
+      // } catch (jsonError) {
+      //   console.warn(`Warning: Could not parse ml_features for module: ${title}. Error: ${jsonError.message}`);
+      //   mlFeatures = null;
+      // }
+      const mlFeatures = null;
 
-      // Query untuk modules. Menggunakan INSERT ... ON DUPLICATE KEY UPDATE
       const query = `
-        INSERT INTO modules (id, title, description, video_url, difficulty, class_level, topic, ml_features)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO modules (title, description, video_url, difficulty, class_level, topic, ml_features)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
           title = VALUES(title),
           description = VALUES(description),
-          video_url = VALUES(video_url),
           difficulty = VALUES(difficulty),
           class_level = VALUES(class_level),
           topic = VALUES(topic),
           ml_features = VALUES(ml_features);
       `;
 
-      // Pastikan urutan dan jumlah parameter sesuai dengan query Anda
-      await db.execute(query, [
-        parsedModuleId,
+      await connection.execute(query, [
         title,
         description,
-        videoUrl || 'N/A', // Gunakan nilai dari CSV atau 'N/A' jika tidak ada
+        videoUrl,
         difficulty,
         classLevel,
         topic,
-        parsedMlFeatures ? JSON.stringify(parsedMlFeatures) : null // Simpan sebagai string JSON atau null
+        mlFeatures ? JSON.stringify(mlFeatures) : null
       ]);
       insertedCount++;
     }
 
-    await db.commit();
+    await connection.commit();
     console.log(`Successfully imported ${insertedCount} records into modules table.`);
   } catch (error) {
-    await db.rollback();
+    if (connection) {
+      await connection.rollback();
+      console.error('Rolling back transaction.');
+    }
     console.error('Error importing ML dataset:', error);
-    console.error('Rolling back transaction.');
   } finally {
-    process.exit(0); // Exit the script after completion
+    if (connection) {
+      connection.release();
+    }
+    process.exit(0);
   }
 }
 
