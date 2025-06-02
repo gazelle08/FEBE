@@ -1,7 +1,7 @@
 // src/server.js
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors'); // Import CORS
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
@@ -11,9 +11,9 @@ const PORT = process.env.PORT || 3000;
 const db = require('./config/database');
 
 // Middleware
-app.use(cors()); // Use CORS middleware
+app.use(cors());
 app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
 
 // Import Routes
 const authRouter = require('./routers/authRouter');

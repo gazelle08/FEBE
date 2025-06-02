@@ -2,19 +2,27 @@
 const db = require('../config/database');
 
 const getAllMissions = async (req, res) => {
+  let connection;
   try {
-    const [missions] = await db.execute('SELECT * FROM missions ORDER BY id ASC');
+    connection = await db.getConnection();
+    const [missions] = await connection.execute('SELECT * FROM missions ORDER BY id ASC');
     res.status(200).json(missions);
   } catch (error) {
     console.error('Error fetching missions:', error);
     res.status(500).json({ message: 'Server error fetching missions.' });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 };
 
 const getUserMissions = async (req, res) => {
+  let connection;
   try {
+    connection = await db.getConnection();
     const userId = req.user.id;
-    const [userMissions] = await db.execute(`
+    const [userMissions] = await connection.execute(`
       SELECT
         m.id,
         m.title,
@@ -35,6 +43,10 @@ const getUserMissions = async (req, res) => {
   } catch (error) {
     console.error('Error fetching user missions:', error);
     res.status(500).json({ message: 'Server error fetching user missions.' });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 };
 
@@ -46,57 +58,86 @@ const completeMission = async (req, res) => {
     return res.status(400).json({ message: 'Mission ID is required.' });
   }
 
+  let connection;
   try {
-    // Get mission details
-    const [missionRows] = await db.execute('SELECT * FROM missions WHERE id = ?', [missionId]);
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    const [missionRows] = await connection.execute('SELECT * FROM missions WHERE id = ?', [missionId]);
     const mission = missionRows[0];
 
     if (!mission) {
+      await connection.rollback();
       return res.status(404).json({ message: 'Mission not found.' });
     }
 
-    // Get user's current mission progress
-    const [userMissionRows] = await db.execute('SELECT * FROM user_missions WHERE user_id = ? AND mission_id = ?', [userId, missionId]);
+    const [userMissionRows] = await connection.execute('SELECT * FROM user_missions WHERE user_id = ? AND mission_id = ? FOR UPDATE', [userId, missionId]);
     let userMission = userMissionRows[0];
 
     if (userMission && userMission.is_completed) {
+      await connection.rollback();
       return res.status(200).json({ message: 'Mission already completed.', mission });
     }
 
-    // Increment progress (or set to required_completion_count if it's a one-off type mission)
     let newProgress = (userMission ? userMission.current_progress : 0) + 1;
     let isMissionCompleted = false;
 
     if (newProgress >= mission.required_completion_count) {
-        isMissionCompleted = true;
-        newProgress = mission.required_completion_count; // Cap progress at max
+      isMissionCompleted = true;
+      newProgress = mission.required_completion_count;
     }
 
     if (userMission) {
-      await db.execute(
+      await connection.execute(
         'UPDATE user_missions SET current_progress = ?, is_completed = ?, completed_at = ? WHERE user_id = ? AND mission_id = ?',
         [newProgress, isMissionCompleted, isMissionCompleted ? new Date() : null, userId, missionId]
       );
     } else {
-      await db.execute(
+      await connection.execute(
         'INSERT INTO user_missions (user_id, mission_id, current_progress, is_completed, completed_at) VALUES (?, ?, ?, ?, ?)',
         [userId, missionId, newProgress, isMissionCompleted, isMissionCompleted ? new Date() : null]
       );
     }
 
     let message = 'Mission progress updated.';
-    if (isMissionCompleted) {
-      // Award XP to user
-      // Simple Leveling Logic (adjust as needed, bisa disatukan dengan logic di quizController atau pakai yang ini)
-      await db.execute('UPDATE users SET xp = xp + ?, level = (CASE WHEN xp + ? >= level * 100 THEN level + 1 ELSE level END) WHERE id = ?',
-        [mission.xp_reward, mission.xp_reward, userId]);
+    let newLevel = null;
+    let xpForNextLevel = null;
+    let badgeAwarded = null;
 
-      message = `Mission "${mission.title}" completed! You earned ${mission.xp_reward} XP.`;
+    if (isMissionCompleted) {
+      const [userRows] = await connection.execute('SELECT xp, level FROM users WHERE id = ? FOR UPDATE', [userId]);
+      const user = userRows[0];
+      let currentXp = user.xp;
+      let currentLevel = user.level;
+
+      let totalXpAfterMission = currentXp + mission.xp_reward;
+      let calculatedLevel = Math.floor(totalXpAfterMission / 100) + 1;
+
+      if (calculatedLevel > currentLevel) {
+        newLevel = calculatedLevel;
+        message = `Mission "${mission.title}" completed! You earned ${mission.xp_reward} XP and leveled up to Level ${newLevel}!`;
+      } else {
+        message = `Mission "${mission.title}" completed! You earned ${mission.xp_reward} XP.`;
+      }
+      xpForNextLevel = (calculatedLevel * 100) - totalXpAfterMission;
+
+      await connection.execute('UPDATE users SET xp = ?, level = ? WHERE id = ?', [totalXpAfterMission, calculatedLevel, userId]);
+
       if (mission.badge_reward) {
+        badgeAwarded = mission.badge_reward;
         message += ` And received the "${mission.badge_reward}" badge!`;
-        // In a real app, you'd also save badge to a user_badges table.
+        try {
+          await connection.execute(
+            'INSERT INTO user_badges (user_id, badge_name) VALUES (?, ?) ON DUPLICATE KEY UPDATE acquired_at = VALUES(acquired_at)',
+            [userId, mission.badge_reward]
+          );
+        } catch (badgeError) {
+          console.warn(`Could not award badge ${mission.badge_reward} to user ${userId}: ${badgeError.message}`);
+        }
       }
     }
+
+    await connection.commit();
 
     res.status(200).json({
       message,
@@ -105,101 +146,31 @@ const completeMission = async (req, res) => {
         currentProgress: newProgress,
         isCompleted: isMissionCompleted,
         xpAwarded: isMissionCompleted ? mission.xp_reward : 0,
-        badgeAwarded: isMissionCompleted ? mission.badge_reward : null
+        badgeAwarded: badgeAwarded
+      },
+      user_status: {
+        newLevel: newLevel,
+        xpForNextLevel: xpForNextLevel
       }
     });
 
   } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
     console.error('Error completing mission:', error);
     res.status(500).json({ message: 'Server error completing mission.' });
-  }
-};
-
-const createMission = async (req, res) => {
-  // Admin only
-  const { title, description, xp_reward, badge_reward, type, required_completion_count } = req.body;
-
-  if (!title || !description || xp_reward === undefined || !type || required_completion_count === undefined) {
-    return res.status(400).json({ message: 'All mission fields (title, description, xp_reward, type, required_completion_count) are required.' });
-  }
-  if (!['watch_video', 'complete_quiz', 'daily_login'].includes(type)) {
-    return res.status(400).json({ message: 'Invalid mission type.' });
-  }
-
-  try {
-    const [result] = await db.execute(
-      'INSERT INTO missions (title, description, xp_reward, badge_reward, type, required_completion_count) VALUES (?, ?, ?, ?, ?, ?)',
-      [title, description, xp_reward, badge_reward, type, required_completion_count]
-    );
-    res.status(201).json({ message: 'Mission created successfully.', missionId: result.insertId });
-  } catch (error) {
-    console.error('Error creating mission:', error);
-    res.status(500).json({ message: 'Server error creating mission.' });
-  }
-};
-
-const updateMission = async (req, res) => {
-  // Admin only
-  const { id } = req.params;
-  const { title, description, xp_reward, badge_reward, type, required_completion_count } = req.body;
-
-  const fieldsToUpdate = [];
-  const params = [];
-
-  if (title) { fieldsToUpdate.push('title = ?'); params.push(title); }
-  if (description) { fieldsToUpdate.push('description = ?'); params.push(description); }
-  if (xp_reward !== undefined) { fieldsToUpdate.push('xp_reward = ?'); params.push(xp_reward); }
-  if (badge_reward !== undefined) { fieldsToUpdate.push('badge_reward = ?'); params.push(badge_reward); }
-  if (type) {
-    if (!['watch_video', 'complete_quiz', 'daily_login'].includes(type)) {
-      return res.status(400).json({ message: 'Invalid mission type.' });
+  } finally {
+    if (connection) {
+      connection.release();
     }
-    fieldsToUpdate.push('type = ?'); params.push(type);
-  }
-  if (required_completion_count !== undefined) { fieldsToUpdate.push('required_completion_count = ?'); params.push(required_completion_count); }
-
-  if (fieldsToUpdate.length === 0) {
-    return res.status(400).json({ message: 'No valid fields provided for update.' });
-  }
-
-  params.push(id); // Add mission ID for WHERE clause
-
-  try {
-    const query = `UPDATE missions SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
-    const [result] = await db.execute(query, params);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Mission not found or no changes made.' });
-    }
-    res.status(200).json({ message: 'Mission updated successfully.' });
-  } catch (error) {
-    console.error('Error updating mission:', error);
-    res.status(500).json({ message: 'Server error updating mission.' });
   }
 };
 
-const deleteMission = async (req, res) => {
-  // Admin only
-  const { id } = req.params;
-  try {
-    const [result] = await db.execute('DELETE FROM missions WHERE id = ?', [id]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Mission not found.' });
-    }
-    res.status(200).json({ message: 'Mission deleted successfully.' });
-  } catch (error) {
-    console.error('Error deleting mission:', error);
-    res.status(500).json({ message: 'Server error deleting mission.' });
-  }
-};
-
+// Removed createMission, updateMission, deleteMission functions
 
 module.exports = {
   getAllMissions,
   getUserMissions,
   completeMission,
-  createMission,
-  updateMission,
-  deleteMission,
 };
