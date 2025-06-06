@@ -1,38 +1,37 @@
-// src/server.js
+// src/routers/authRouter.js
 const express = require('express');
-const cors = require('cors');
-const authRouter = require('./routers/authRouter');
-const userRouter = require('./routers/userRouter');
-const moduleRouter = require('./routers/moduleRouter');
-const quizRouter = require('./routers/quizRouter');
-const leaderboardRouter = require('./routers/leaderboardRouter');
-const missionRouter = require('./routers/missionRouter');
+const router = express.Router();
+const authController = require('./Controllers/authController');
+const passport = require('passport');
 
-require('dotenv').config();
 
-const app = express();
-const port = process.env.PORT || 3000;
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google/callback',
+    passport.authenticate('google', { failureRedirect: '/login', session: false }),
+    (req, res) => {
+        const token = req.user.token; 
+        res.redirect(`${process.env.FRONTEND_URL}/auth-success?token=${token}`);
+    }
+);
 
-app.use(cors());
-app.use(express.json());
+router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
+router.get('/facebook/callback',
+    passport.authenticate('facebook', { failureRedirect: '/login', session: false }),
+    (req, res) => {
+        const token = req.user.token;
+        res.redirect(`${process.env.FRONTEND_URL}/auth-success?token=${token}`);
+    }
+);
 
-// Routes
-app.use('/api/auth', authRouter);
-app.use('/api/users', userRouter);
-app.use('/api/modules', moduleRouter); 
-app.use('/api/quizzes', quizRouter);
-app.use('/api/leaderboard', leaderboardRouter);
-app.use('/api/missions', missionRouter);
+router.get('/apple', passport.authenticate('apple'));
+router.post('/apple/callback',
+    passport.authenticate('apple', { failureRedirect: '/login', session: false }),
+    (req, res) => {
+        const token = req.user.token;
+        res.redirect(`${process.env.FRONTEND_URL}/auth-success?token=${token}`);
+    }
+);
 
-app.get('/', (req, res) => {
-  res.send('Welcome to the SIUDIN API!');
-});
-
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+module.exports = router;
