@@ -2,16 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const { verifyToken } = require('../middleware/authMiddleware'); // checkAdminRole is removed
+const { verifyToken } = require('../middleware/authMiddleware');
 
-// Protected routes (require JWT)
 router.get('/profile', verifyToken, userController.getUserProfile);
 router.put('/profile', verifyToken, userController.updateUserProfile);
 router.post('/log-video-watch', verifyToken, userController.logVideoWatch);
 router.get('/dashboard', verifyToken, userController.getDashboardData);
-
-// Admin-only routes are removed
-// router.get('/', verifyToken, checkAdminRole, userController.getAllUsers);
-// router.delete('/:id', verifyToken, checkAdminRole, userController.deleteUser);
+router.put('/change-password', verifyToken, userController.changePassword);
 
 module.exports = router;

@@ -1,5 +1,13 @@
 // src/controllers/userController.js
 const db = require('../config/database');
+const bcrypt = require('bcryptjs'); 
+
+const calculateAge = (dateOfBirth) => {
+  const dob = new Date(dateOfBirth);
+  const diff_ms = Date.now() - dob.getTime();
+  const age_dt = new Date(diff_ms);
+  return Math.abs(age_dt.getUTCFullYear() - 1970);
+};
 
 const getUserProfile = async (req, res) => {
   let connection;
@@ -7,7 +15,6 @@ const getUserProfile = async (req, res) => {
     connection = await db.getConnection();
     const userId = req.user.id;
 
-    // Removed 'role' from SELECT statement
     const [users] = await connection.execute('SELECT id, username, full_name, email, xp, level, created_at, date_of_birth, education_level, gender FROM users WHERE id = ?', [userId]);
     const user = users[0];
 
@@ -31,22 +38,59 @@ const updateUserProfile = async (req, res) => {
   try {
     connection = await db.getConnection();
     const userId = req.user.id;
-    // You might want to allow updating fullName, dateOfBirth, educationLevel, gender here as well
-    const { username, email } = req.body; // Keeping only username and email for simplicity as per original, but extendable
+    const { username, email, full_name, date_of_birth, education_level, gender } = req.body;
 
-    if (!username || !email) {
-      return res.status(400).json({ message: 'Username and email are required for update.' });
+    const fieldsToUpdate = [];
+    const params = [];
+    let age;
+
+    if (username) {
+        fieldsToUpdate.push('username = ?');
+        params.push(username);
+    }
+    if (email) {
+        fieldsToUpdate.push('email = ?');
+        params.push(email);
+    }
+    if (full_name) {
+        fieldsToUpdate.push('full_name = ?');
+        params.push(full_name);
+    }
+    if (date_of_birth) {
+        fieldsToUpdate.push('date_of_birth = ?');
+        params.push(date_of_birth);
+        age = calculateAge(date_of_birth);
+        fieldsToUpdate.push('age = ?');
+        params.push(age);
+    }
+    if (education_level) {
+        fieldsToUpdate.push('education_level = ?');
+        params.push(education_level);
+    }
+    if (gender) {
+        fieldsToUpdate.push('gender = ?');
+        params.push(gender);
     }
 
-    const [existingUsers] = await connection.execute('SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?', [username, email, userId]);
-    if (existingUsers.length > 0) {
-      return res.status(409).json({ message: 'Username or email already taken by another user.' });
+    if (fieldsToUpdate.length === 0) {
+      return res.status(400).json({ message: 'No valid fields provided for update.' });
     }
 
-    const [result] = await connection.execute(
-      'UPDATE users SET username = ?, email = ? WHERE id = ?',
-      [username, email, userId]
-    );
+    if (username || email) {
+      const [existingUsers] = await connection.execute(
+        'SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?',
+        [username || null, email || null, userId]
+      );
+      if (existingUsers.length > 0) {
+        return res.status(409).json({ message: 'Username or email already taken by another user.' });
+      }
+    }
+
+    params.push(userId);
+
+    const query = `UPDATE users SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
+
+    const [result] = await connection.execute(query, params);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'User not found or no changes made.' });
@@ -63,7 +107,51 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-// Removed getAllUsers and deleteUser functions
+const changePassword = async (req, res) => {
+  let connection;
+  try {
+    connection = await db.getConnection();
+    const userId = req.user.id;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: 'Old password and new password are required.' });
+    }
+
+    const [userRows] = await connection.execute('SELECT password FROM users WHERE id = ?', [userId]);
+    const user = userRows[0];
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Old password is incorrect.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    const [result] = await connection.execute(
+      'UPDATE users SET password = ? WHERE id = ?',
+      [hashedPassword, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(500).json({ message: 'Failed to update password.' });
+    }
+
+    res.status(200).json({ message: 'Password updated successfully.' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({ message: 'Server error changing password.' });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+};
 
 const logVideoWatch = async (req, res) => {
   const { moduleId } = req.body;
@@ -165,6 +253,7 @@ const getDashboardData = async (req, res) => {
 module.exports = {
   getUserProfile,
   updateUserProfile,
+  changePassword,
   logVideoWatch,
   getDashboardData,
 };

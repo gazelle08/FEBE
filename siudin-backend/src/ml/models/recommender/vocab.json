@@ -1,0 +1,19 @@
+{
+  "word_index": {
+    "<PAD>": 0,
+    "<START>": 1,
+    "<UNKNOWN>": 2,
+    "matematika": 3,
+    "fisika": 4,
+    "kimia": 5,
+    "smp": 6,
+    "sma": 7,
+    "mudah": 8,
+    "sedang": 9,
+    "sulit": 10
+  },
+  "config": {
+    "num_words": 2179,
+    "oov_token": "<UNKNOWN>"
+  }
+}

@@ -105,12 +105,14 @@ const completeMission = async (req, res) => {
     let badgeAwarded = null;
 
     if (isMissionCompleted) {
-      const [userRows] = await connection.execute('SELECT xp, level FROM users WHERE id = ? FOR UPDATE', [userId]);
+      const [userRows] = await connection.execute('SELECT xp, level, xp_this_month FROM users WHERE id = ? FOR UPDATE', [userId]);
       const user = userRows[0];
       let currentXp = user.xp;
       let currentLevel = user.level;
+      let currentXpThisMonth = user.xp_this_month || 0;
 
       let totalXpAfterMission = currentXp + mission.xp_reward;
+      let totalXpThisMonthAfterMission = currentXpThisMonth + mission.xp_reward;
       let calculatedLevel = Math.floor(totalXpAfterMission / 100) + 1;
 
       if (calculatedLevel > currentLevel) {
@@ -121,7 +123,7 @@ const completeMission = async (req, res) => {
       }
       xpForNextLevel = (calculatedLevel * 100) - totalXpAfterMission;
 
-      await connection.execute('UPDATE users SET xp = ?, level = ? WHERE id = ?', [totalXpAfterMission, calculatedLevel, userId]);
+      await connection.execute('UPDATE users SET xp = ?, level = ?, xp_this_month = ? WHERE id = ?', [totalXpAfterMission, calculatedLevel, totalXpThisMonthAfterMission, userId]);
 
       if (mission.badge_reward) {
         badgeAwarded = mission.badge_reward;
@@ -166,8 +168,6 @@ const completeMission = async (req, res) => {
     }
   }
 };
-
-// Removed createMission, updateMission, deleteMission functions
 
 module.exports = {
   getAllMissions,

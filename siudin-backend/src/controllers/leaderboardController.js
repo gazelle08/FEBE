@@ -3,9 +3,8 @@ const db = require('../config/database');
 
 const getLeaderboard = async (req, res) => {
   try {
-    // Fetch users ordered by XP in descending order
     const [leaderboard] = await db.execute(
-      'SELECT id, username, xp, level FROM users ORDER BY xp DESC, level DESC LIMIT 20'
+      'SELECT id, username, xp_this_month AS xp, level FROM users ORDER BY xp_this_month DESC, level DESC LIMIT 20'
     );
     res.status(200).json(leaderboard);
   } catch (error) {

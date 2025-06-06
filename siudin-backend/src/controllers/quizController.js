@@ -62,7 +62,7 @@ const submitQuiz = async (req, res) => {
     const quizResult = {
       isCorrect: false,
       xpEarned: 0,
-      correctAnswer: quiz.correct_answer
+      correctAnswer: quiz.correct_answer 
     };
 
     if (userAnswer === quiz.correct_answer) {
@@ -70,14 +70,17 @@ const submitQuiz = async (req, res) => {
       xpEarned = quiz.xp_reward;
       quizResult.isCorrect = true;
       quizResult.xpEarned = xpEarned;
-      quizResult.correctAnswer = null;
+      quizResult.correctAnswer = null; 
 
-      const [userRows] = await connection.execute('SELECT xp, level FROM users WHERE id = ? FOR UPDATE', [userId]);
+      const [userRows] = await connection.execute('SELECT xp, level, xp_this_month FROM users WHERE id = ? FOR UPDATE', [userId]);
       const user = userRows[0];
       let currentXp = user.xp;
       let currentLevel = user.level;
+      let currentXpThisMonth = user.xp_this_month || 0;
 
       let totalXpAfterQuiz = currentXp + xpEarned;
+      let totalXpThisMonthAfterQuiz = currentXpThisMonth + xpEarned;
+
       let calculatedLevel = Math.floor(totalXpAfterQuiz / 100) + 1;
 
       if (calculatedLevel > currentLevel) {
@@ -88,7 +91,7 @@ const submitQuiz = async (req, res) => {
       }
       xpForNextLevel = (calculatedLevel * 100) - totalXpAfterQuiz;
 
-      await connection.execute('UPDATE users SET xp = ?, level = ? WHERE id = ?', [totalXpAfterQuiz, calculatedLevel, userId]);
+      await connection.execute('UPDATE users SET xp = ?, level = ?, xp_this_month = ? WHERE id = ?', [totalXpAfterQuiz, calculatedLevel, totalXpThisMonthAfterQuiz, userId]);
     }
 
     await connection.execute(
@@ -124,8 +127,6 @@ const submitQuiz = async (req, res) => {
     }
   }
 };
-
-// Removed createQuiz, updateQuiz, deleteQuiz functions
 
 module.exports = {
   getQuizzesByModuleId,

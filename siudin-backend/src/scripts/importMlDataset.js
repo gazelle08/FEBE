@@ -18,7 +18,7 @@ async function importMlDataset() {
     const parser = fs
       .createReadStream(csvFilePath)
       .pipe(parse({
-        columns: true,
+        columns: true, 
         skip_empty_lines: true,
         trim: true
       }));
@@ -37,15 +37,24 @@ async function importMlDataset() {
     await connection.beginTransaction();
     console.log('Transaction started.');
 
-    let insertedCount = 0;
+    let importedCount = 0;
     for (const record of records) {
       const jenjang = record['Jenjang'];
       const mataPelajaran = record['Mata Pelajaran'];
       const materi = record['Materi'];
       const subMateri = record['Sub Materi'];
       const link = record['Link'];
+      
+      const combinedQuestionAndAnswerText = record['Pertanyaan'] || null;
+      let actualQuestionsText = null;
+      let actualAnswerKeysText = null;
 
-      // Derived fields
+      if (combinedQuestionAndAnswerText) {
+          const parts = combinedQuestionAndAnswerText.split('Kunci Jawaban:');
+          actualQuestionsText = parts[0] ? parts[0].trim() : null;
+          actualAnswerKeysText = parts[1] ? parts[1].trim() : null;
+      }
+
       const title = `${mataPelajaran} - ${materi} (${subMateri})`;
       const description = `Materi pembelajaran ${materi} dengan sub-materi ${subMateri}.`;
       const videoUrl = link || null;
@@ -66,52 +75,112 @@ async function importMlDataset() {
         difficulty = 'Unknown';
       }
 
-      // --- PERSIAPAN UNTUK 'ml_features' ---
-      // Saat ini 'ml_features' akan tetap null karena tidak ada di CSV yang diberikan.
-      // Jika tim ML menambahkan kolom 'ml_features' (misalnya, sebagai string JSON)
-      // ke CSV di masa depan, Anda bisa membaca kolom tersebut di sini:
-      // const mlFeaturesRaw = record['Nama_Kolom_ML_Features_Baru_Dari_CSV'];
-      // let mlFeatures = null;
-      // try {
-      //   if (mlFeaturesRaw) {
-      //     mlFeatures = JSON.parse(mlFeaturesRaw);
-      //   }
-      // } catch (jsonError) {
-      //   console.warn(`Warning: Could not parse ml_features for module: ${title}. Error: ${jsonError.message}`);
-      //   mlFeatures = null;
-      // }
-      const mlFeatures = null;
+      const mlFeatures = null; 
 
-      const query = `
-        INSERT INTO modules (title, description, video_url, difficulty, class_level, topic, ml_features)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+      const moduleInsertQuery = `
+        INSERT INTO modules (title, description, video_url, difficulty, class_level, topic, ml_features, questions_text, answer_key_text)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
-          title = VALUES(title),
           description = VALUES(description),
+          video_url = VALUES(video_url),
           difficulty = VALUES(difficulty),
           class_level = VALUES(class_level),
           topic = VALUES(topic),
-          ml_features = VALUES(ml_features);
+          ml_features = VALUES(ml_features),
+          questions_text = VALUES(questions_text),
+          answer_key_text = VALUES(answer_key_text);
       `;
-
-      await connection.execute(query, [
+      const [moduleResult] = await connection.execute(moduleInsertQuery, [
         title,
         description,
         videoUrl,
         difficulty,
         classLevel,
         topic,
-        mlFeatures ? JSON.stringify(mlFeatures) : null
+        mlFeatures ? JSON.stringify(mlFeatures) : null,
+        actualQuestionsText, 
+        actualAnswerKeysText 
       ]);
-      insertedCount++;
+
+      let moduleId = moduleResult.insertId;
+      if (moduleResult.affectedRows === 0 && moduleResult.warningStatus === 0) {
+          const [existingModule] = await connection.execute('SELECT id FROM modules WHERE title = ?', [title]);
+          if (existingModule.length > 0) {
+              moduleId = existingModule[0].id;
+          } else {
+              console.warn(`Could not retrieve module_id for module: ${title}. Skipping quiz import for this module.`);
+              continue;
+          }
+      }
+
+      if (actualQuestionsText && actualAnswerKeysText) {
+        try {
+          const questionsArray = actualQuestionsText.split(/\n\s*(?=\d+\.\s*)/).filter(q => q.trim() !== '');
+          
+          const answerKeysCleaned = actualAnswerKeysText.split('\n').map(a => {
+            const match = a.trim().match(/^[a-d]/i); 
+            return match ? match[0].toLowerCase() : null;
+          }).filter(Boolean); 
+
+          for (let i = 0; i < questionsArray.length; i++) {
+            const fullQuestionText = questionsArray[i].trim();
+            
+            let currentOptions = [];
+            let questionOnly = fullQuestionText;
+            
+            const optionsRegex = /[a-d]\.\s*([^\n]+)/g;
+            let match;
+
+            const tempQuestionWithOptions = fullQuestionText;
+            const localOptionsRegex = new RegExp(optionsRegex); // Create new regex instance for each question
+            while ((match = localOptionsRegex.exec(tempQuestionWithOptions)) !== null) {
+                currentOptions.push(match[1].trim());
+            }
+
+            questionOnly = fullQuestionText.replace(optionsRegex, '').replace(/^\d+\.\s*/, '').trim();
+
+            let correctAnswer = answerKeysCleaned[i] || null;
+
+            const quizXpReward = 10; 
+
+            const quizInsertQuery = `
+              INSERT INTO quizzes (module_id, question, options, correct_answer, xp_reward)
+              VALUES (?, ?, ?, ?, ?)
+              ON DUPLICATE KEY UPDATE
+                question = VALUES(question),
+                options = VALUES(options),
+                correct_answer = VALUES(correct_answer),
+                xp_reward = VALUES(xp_reward);
+            `;
+
+            await connection.execute(quizInsertQuery, [
+              moduleId,
+              questionOnly,
+              JSON.stringify(currentOptions),
+              correctAnswer,
+              quizXpReward
+            ]);
+            console.log(`    Successfully inserted quiz ${i + 1} for module ${title}`);
+          }
+        } catch (parseError) {
+          console.warn(`Warning: Could not parse quizzes for module: ${title}. Error: ${parseError.message}`);
+        }
+      }
+      importedCount++;
     }
 
     await connection.commit();
-    console.log(`Successfully imported ${insertedCount} records into modules table.`);
+    console.log('Verifying data count after commit...');
+    const [moduleCountRows] = await connection.execute('SELECT COUNT(*) AS count FROM modules;');
+    const moduleCount = moduleCountRows[0].count;
+    const [quizCountRows] = await connection.execute('SELECT COUNT(*) AS count FROM quizzes;');
+    const quizCount = quizCountRows[0].count;
+    console.log(`Current modules count: ${moduleCount}`);
+    console.log(`Current quizzes count: ${quizCount}`);
+    console.log(`Successfully imported ${importedCount} records into modules and quizzes tables.`);
   } catch (error) {
     if (connection) {
       await connection.rollback();
-      console.error('Rolling back transaction.');
     }
     console.error('Error importing ML dataset:', error);
   } finally {
