@@ -30,7 +30,7 @@ const leaderboardRouter = require('./routers/leaderboardRouter');
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/modules', moduleRouter);
-app.use('/api/quizzes', quizRouter);
+app.use('/api/quizzes/module', quizRouter);
 app.use('/api/missions', missionRouter);
 app.use('/api/leaderboard', leaderboardRouter);
 

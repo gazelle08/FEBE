@@ -19,13 +19,13 @@ const getUserProfile = async (req, res) => {
     const user = users[0];
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      return res.status(404).json({ message: 'User not found.' }); 
     }
 
     res.status(200).json(user);
   } catch (error) {
     console.error('Error fetching user profile:', error);
-    res.status(500).json({ message: 'Server error fetching user profile.' });
+    res.status(500).json({ message: 'Server error fetching user profile.' }); 
   } finally {
     if (connection) {
       connection.release();
@@ -73,7 +73,7 @@ const updateUserProfile = async (req, res) => {
     }
 
     if (fieldsToUpdate.length === 0) {
-      return res.status(400).json({ message: 'No valid fields provided for update.' });
+      return res.status(400).json({ message: 'No valid fields provided for update.' }); 
     }
 
     if (username || email) {
@@ -82,7 +82,7 @@ const updateUserProfile = async (req, res) => {
         [username || null, email || null, userId]
       );
       if (existingUsers.length > 0) {
-        return res.status(409).json({ message: 'Username or email already taken by another user.' });
+        return res.status(409).json({ message: 'Username or email already taken by another user.' }); 
       }
     }
 
@@ -93,10 +93,10 @@ const updateUserProfile = async (req, res) => {
     const [result] = await connection.execute(query, params);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'User not found or no changes made.' });
+      return res.status(404).json({ message: 'User not found or no changes made.' }); 
     }
 
-    res.status(200).json({ message: 'Profile updated successfully.' });
+    res.status(200).json({ message: 'Profile updated successfully.' }); 
   } catch (error) {
     console.error('Error updating user profile:', error);
     res.status(500).json({ message: 'Server error updating user profile.' });
@@ -115,19 +115,19 @@ const changePassword = async (req, res) => {
     const { oldPassword, newPassword } = req.body;
 
     if (!oldPassword || !newPassword) {
-      return res.status(400).json({ message: 'Old password and new password are required.' });
+      return res.status(400).json({ message: 'Old password and new password are required.' }); 
     }
 
     const [userRows] = await connection.execute('SELECT password FROM users WHERE id = ?', [userId]);
     const user = userRows[0];
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      return res.status(404).json({ message: 'User not found.' }); 
     }
 
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Old password is incorrect.' });
+      return res.status(401).json({ message: 'Old password is incorrect.' }); 
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -142,7 +142,7 @@ const changePassword = async (req, res) => {
       return res.status(500).json({ message: 'Failed to update password.' });
     }
 
-    res.status(200).json({ message: 'Password updated successfully.' });
+    res.status(200).json({ message: 'Password updated successfully.' }); 
   } catch (error) {
     console.error('Error changing password:', error);
     res.status(500).json({ message: 'Server error changing password.' });
@@ -158,33 +158,60 @@ const logVideoWatch = async (req, res) => {
   const userId = req.user.id;
 
   if (!moduleId) {
-    return res.status(400).json({ message: 'Module ID is required.' });
+    return res.status(400).json({ message: 'Module ID is required.' }); 
   }
 
   let connection;
   try {
     connection = await db.getConnection();
+    await connection.beginTransaction(); 
+
     await connection.execute(
       'INSERT INTO user_video_watches (user_id, module_id) VALUES (?, ?)',
       [userId, moduleId]
     );
 
     const [watchVideoMissions] = await connection.execute(
-      `SELECT id FROM missions WHERE type = 'watch_video'`
+      `SELECT id, required_completion_count FROM missions WHERE type = 'watch_video'`
     );
     if (watchVideoMissions.length > 0) {
       for (const mission of watchVideoMissions) {
         await connection.execute(
-          'INSERT INTO user_missions (user_id, mission_id, current_progress, is_completed, completed_at) VALUES (?, ?, 1, FALSE, NULL) ON DUPLICATE KEY UPDATE current_progress = current_progress + 1',
-          [userId, mission.id]
+          'INSERT INTO user_missions (user_id, mission_id, current_progress, is_completed) VALUES (?, ?, 1, FALSE) ' +
+          'ON DUPLICATE KEY UPDATE current_progress = current_progress + 1, is_completed = IF(current_progress + 1 >= ?, TRUE, FALSE)',
+          [userId, mission.id, mission.required_completion_count]
         );
       }
     }
 
+    const today = new Date().toISOString().slice(0, 10);
+    const [dailyWatchVideoMissions] = await connection.execute(
+      `SELECT m.id, m.required_completion_count, dm.current_progress
+       FROM daily_missions dm
+       JOIN missions m ON dm.mission_id = m.id
+       WHERE dm.user_id = ? AND dm.assigned_date = ? AND m.type = 'watch_video'`,
+      [userId, today]
+    );
+
+    if (dailyWatchVideoMissions.length > 0) {
+      for (const mission of dailyWatchVideoMissions) {
+        const newDailyProgress = mission.current_progress + 1;
+        const isDailyMissionCompleted = newDailyProgress >= mission.required_completion_count;
+        await connection.execute(
+          'UPDATE daily_missions SET current_progress = ?, is_completed = ?, completed_at = ? WHERE user_id = ? AND mission_id = ? AND assigned_date = ?',
+          [newDailyProgress, isDailyMissionCompleted, isDailyMissionCompleted ? new Date() : null, userId, mission.id, today]
+        );
+      }
+    }
+
+    await connection.commit(); 
     res.status(200).json({ message: 'Video watch logged successfully.' });
   } catch (error) {
+    if (connection) {
+      await connection.rollback(); 
+    }
     console.error('Error logging video watch:', error);
-    res.status(500).json({ message: 'Server error logging video watch.' });
+    res.status(500).json({ message: 'Server error logging video watch.' }); 
   } finally {
     if (connection) {
       connection.release();
@@ -202,7 +229,7 @@ const getDashboardData = async (req, res) => {
     const user = userRows[0];
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      return res.status(404).json({ message: 'User not found.' }); 
     }
 
     const [completedModulesResult] = await connection.execute(
@@ -238,7 +265,6 @@ const getDashboardData = async (req, res) => {
       total_missions_completed: totalCompletedMissions,
       total_videos_watched: totalVideosWatched
     });
-
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     res.status(500).json({ message: 'Server error fetching dashboard data.' });

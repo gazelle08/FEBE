@@ -42,7 +42,7 @@ async function importMissionDataset() {
             const missionTitle = record['Misi'];
             const xpReward = parseInt(record['XP'], 10) || 0;
             const targetValue = parseInt(record['Target'], 10) || 1; 
-            const type = record['Type'] || 'watch_video'; 
+            const type = record['Type'] || 'watch_video';
             const badgeReward = record['Badge Reward'] || null; 
 
 
