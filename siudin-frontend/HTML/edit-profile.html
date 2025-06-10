@@ -20,7 +20,7 @@
             
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="#" class="nav-link">Home</a>
+                    <a href="home.html" class="nav-link">Home</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a href="#" class="nav-link">
@@ -28,7 +28,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link active">Dashboard</a>
+                    <a href="dashboard.html" class="nav-link active">Dashboard</a>
                 </li>
             </ul>
             
@@ -56,19 +56,18 @@
 
                 <div class="form-group">
                     <label for="fullName" class="form-label">Nama Lengkap</label>
-                    <input type="text" id="fullName" class="form-input" value="Siti Lestari">
+                    <input type="text" id="fullName" class="form-input" value="">
                 </div>
 
                 <div class="form-group">
                     <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" class="form-input" value="siti1@gmail.com">
+                    <input type="email" id="email" class="form-input" value="">
                 </div>
 
                 <div class="form-group">
                     <label for="password" class="form-label">Password</label>
                     <div class="input-wrapper">
-                        <input type="password" id="password" class="form-input" value="siti1234">
-                        <button type="button" class="input-icon" onclick="togglePassword()">
+                        <input type="password" id="password" class="form-input" value="********" readonly> <button type="button" class="input-icon" onclick="togglePassword()">
                             <i class="fas fa-eye" id="passwordToggle"></i>
                         </button>
                     </div>
@@ -77,7 +76,7 @@
                 <div class="form-group">
                     <label for="birthDate" class="form-label">Tanggal Lahir</label>
                     <div class="input-wrapper">
-                        <input type="text" id="birthDate" class="form-input" value="11/04/2007" readonly>
+                        <input type="text" id="birthDate" class="form-input" value="" readonly>
                         <span class="input-icon">
                             <i class="fas fa-calendar-alt"></i>
                         </span>
@@ -88,22 +87,22 @@
                     <label for="education" class="form-label">Jenjang Pendidikan</label>
                     <div class="dropdown-wrapper">
                         <button type="button" class="dropdown-btn" onclick="toggleDropdown()">
-                            <span id="selectedEducation">Kelas 7 - Kurikulum Merdeka</span>
+                            <span id="selectedEducation">Pilih Jenjang Pendidikan</span>
                             <i class="fas fa-chevron-down" id="dropdownArrow"></i>
                         </button>
                         <div class="dropdown-menu" id="educationDropdown">
-                            <div class="dropdown-item" onclick="selectEducation('Kelas 7 - Kurikulum Merdeka')">Kelas 7 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" onclick="selectEducation('Kelas 8 - Kurikulum Merdeka')">Kelas 8 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" onclick="selectEducation('Kelas 9 - Kurikulum Merdeka')">Kelas 9 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" onclick="selectEducation('Kelas 10 - Kurikulum Merdeka')">Kelas 10 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" onclick="selectEducation('Kelas 11 - Kurikulum Merdeka')">Kelas 11 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" onclick="selectEducation('Kelas 12 - Kurikulum Merdeka')">Kelas 12 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" data-value="Kelas 7 - Kurikulum Merdeka">Kelas 7 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" data-value="Kelas 8 - Kurikulum Merdeka">Kelas 8 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" data-value="Kelas 9 - Kurikulum Merdeka">Kelas 9 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" data-value="Kelas 10 - Kurikulum Merdeka">Kelas 10 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" data-value="Kelas 11 - Kurikulum Merdeka">Kelas 11 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" data-value="Kelas 12 - Kurikulum Merdeka">Kelas 12 - Kurikulum Merdeka</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary">Back To Home</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='home.html'">Back To Home</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
@@ -111,6 +110,94 @@
     </main>
 
     <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                alert('You need to be logged in to edit your profile.');
+                window.location.href = 'sign-in.html';
+                return;
+            }
+
+            // Fetch user profile data
+            try {
+                const response = await fetch('http://localhost:3000/api/users/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('fullName').value = data.full_name; // 
+                    document.getElementById('email').value = data.email; // 
+                    document.getElementById('birthDate').value = data.date_of_birth; // YYYY-MM-DD 
+                    document.getElementById('selectedEducation').textContent = data.education_level || 'Pilih Jenjang Pendidikan'; // 
+                } else {
+                    if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
+                        alert('Session expired or invalid. Please log in again.');
+                        localStorage.removeItem('jwtToken');
+                        window.location.href = 'sign-in.html';
+                    } else if (response.status === 404) { // Not Found 
+                        alert('User profile not found.');
+                    } else {
+                        alert(`Failed to load profile data: ${data.message || 'Unknown error.'}`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching profile data:', error);
+                alert('An error occurred while loading your profile. Please try again.');
+            }
+
+            // Handle form submission for saving changes
+            document.querySelector('.profile-form').addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const updatedData = {
+                    full_name: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    // password is not handled directly here, would be a separate change password function
+                    date_of_birth: document.getElementById('birthDate').value,
+                    education_level: document.getElementById('selectedEducation').textContent === 'Pilih Jenjang Pendidikan' ? '' : document.getElementById('selectedEducation').textContent
+                };
+
+                try {
+                    const response = await fetch('http://localhost:3000/api/users/profile', {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`, // 
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updatedData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) { // 200 OK 
+                        alert(data.message); // "Profile updated successfully." 
+                        // Optionally, update the displayed data immediately or redirect
+                    } else {
+                        if (response.status === 400) { // Bad Request 
+                            alert('Update failed: Invalid data provided.');
+                        } else if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
+                            alert('Session expired or invalid. Please log in again.');
+                            localStorage.removeItem('jwtToken');
+                            window.location.href = 'sign-in.html';
+                        } else if (response.status === 409) { // Conflict 
+                            alert('Update failed: Email already in use by another user.');
+                        } else {
+                            alert(`Update failed: ${data.message || 'Unknown error.'}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error updating profile:', error);
+                    alert('An error occurred while updating your profile. Please try again.');
+                }
+            });
+        });
+
         function togglePassword() {
             const passwordInput = document.getElementById('password');
             const passwordToggle = document.getElementById('passwordToggle');
@@ -134,6 +221,13 @@
             arrow.classList.toggle('rotate');
         }
 
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                selectEducation(value);
+            });
+        });
+
         function selectEducation(value) {
             document.getElementById('selectedEducation').textContent = value;
             document.getElementById('educationDropdown').classList.remove('show');
@@ -143,7 +237,7 @@
         // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const dropdownWrapper = document.querySelector('.dropdown-wrapper');
-            if (!dropdownWrapper.contains(event.target)) {
+            if (dropdownWrapper && !dropdownWrapper.contains(event.target)) {
                 document.getElementById('educationDropdown').classList.remove('show');
                 document.getElementById('dropdownArrow').classList.remove('rotate');
             }

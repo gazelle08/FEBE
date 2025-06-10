@@ -18,9 +18,9 @@
         </div>
         
         <nav class="nav-menu">
-            <a href="#" class="nav-item">Home</a>
+            <a href="home.html" class="nav-item">Home</a>
             <a href="#" class="nav-item active">Fitur <i class="fas fa-chevron-down"></i></a>
-            <a href="#" class="nav-item">Dashboard</a>
+            <a href="dashboard.html" class="nav-item">Dashboard</a>
         </nav>
         
         <div class="user-section">
@@ -35,41 +35,25 @@
         <div class="quiz-container">
             <aside class="hint-section">
                 <h3 class="hint-title"><i class="fas fa-lightbulb hint-icon"></i>Hint</h3>
-                <p class="hint-content">
+                <p class="hint-content" id="hint-content">
                     Ingat, simbol bilangan bulat biasanya diambil dari kata dalam bahasa Jerman, yaitu Zahlen, yang berarti angka atau bilangan.
                 </p>
             </aside>
             
             <section class="quiz-area">
-                <div class="question-box">
-                    Apa simbol yang mewakili bilangan bulat dalam matematika?
+                <div class="question-box" id="question-text">
+                    Loading question...
                 </div>
                 
-                <div class="answers-grid">
-                    <button class="answer-option">
-                        <i class="far fa-circle"></i>
-                        I
-                    </button>
-                    <button class="answer-option">
-                        <i class="far fa-circle"></i>
-                        Z
-                    </button>
-                    <button class="answer-option selected">
-                        <i class="fas fa-check"></i>
-                        N
-                    </button>
-                    <button class="answer-option">
-                        <i class="far fa-circle"></i>
-                        Q
-                    </button>
-                </div>
+                <div class="answers-grid" id="answers-grid">
+                    </div>
                 
                 <div class="navigation-buttons">
-                    <button class="nav-button back-button">
+                    <button class="nav-button back-button" onclick="window.history.back()">
                         <i class="fas fa-arrow-left"></i>
                         Back To Video
                     </button>
-                    <button class="nav-button next-button">
+                    <button class="nav-button next-button" id="next-question-btn">
                         Next Question
                         <i class="fas fa-arrow-right"></i>
                     </button>
@@ -78,19 +62,237 @@
             
             <aside class="time-section">
                 <div class="time-label">Time remaining:</div>
-                <div class="time-remaining">15.00</div>
-                <div class="question-numbers">
-                    <button class="question-btn active" onclick="goToQuestion(1)">1</button>
-                    <button class="question-btn" onclick="goToQuestion(2)">2</button>
-                    <button class="question-btn" onclick="goToQuestion(3)">3</button>
-                    <button class="question-btn" onclick="goToQuestion(4)">4</button>
-                    <button class="question-btn row-3" onclick="goToQuestion(5)">5</button>
-                </div>
+                <div class="time-remaining" id="time-remaining">15.00</div>
+                <div class="question-numbers" id="question-numbers-container">
+                    </div>
             </aside>
         </div>
     </main>
 
-    <!-- External JavaScript -->
     <script src="../Java Script/quiz-question.js"></script>
+    <script>
+        let quizQuestions = [];
+        let currentQuestionIndex = 0;
+        let selectedAnswer = null;
+        const totalQuizTime = 15.00; // Total time for the quiz in seconds
+        let timeRemaining = totalQuizTime;
+        let timerInterval;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const moduleId = urlParams.get('moduleId');
+            const token = localStorage.getItem('jwtToken');
+
+            if (!moduleId || !token) {
+                alert('Module ID or login token is missing. Please go back to the modules page and try again.');
+                window.location.href = 'modul.html';
+                return;
+            }
+
+            // Function to fetch quiz questions
+            async function fetchQuizQuestions() {
+                try {
+                    const response = await fetch(`http://localhost:3000/api/quizzes/module/${moduleId}`, { // 
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`, // 
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        quizQuestions = data;
+                        if (quizQuestions.length > 0) {
+                            displayQuestion(currentQuestionIndex);
+                            startTimer();
+                            renderQuestionButtons();
+                        } else {
+                            alert('No quiz questions found for this module.');
+                            window.location.href = `detail-module.html?moduleId=${moduleId}`;
+                        }
+                    } else {
+                        if (response.status === 403) { // Forbidden 
+                            alert('You must complete the module before accessing its quiz.');
+                        } else if (response.status === 404) { // Not Found 
+                            alert('No quiz found for this module, or module is not yet ready for quiz.');
+                        } else if (response.status === 401) { // Unauthorized 
+                            alert('Session expired. Please log in again.');
+                            localStorage.removeItem('jwtToken');
+                            window.location.href = 'sign-in.html';
+                        } else {
+                            alert(`Failed to load quiz: ${data.message || 'Unknown error.'}`);
+                        }
+                        window.location.href = `detail-module.html?moduleId=${moduleId}`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching quiz questions:', error);
+                    alert('An error occurred while loading the quiz. Please try again.');
+                    window.location.href = `detail-module.html?moduleId=${moduleId}`;
+                }
+            }
+
+            // Function to display a specific question
+            function displayQuestion(index) {
+                const question = quizQuestions[index];
+                if (!question) {
+                    console.error('Question at index', index, 'not found.');
+                    return;
+                }
+
+                document.getElementById('question-text').textContent = question.question;
+                const answersGrid = document.getElementById('answers-grid');
+                answersGrid.innerHTML = ''; // Clear previous options
+                selectedAnswer = null; // Reset selected answer
+
+                let options;
+                try {
+                    options = JSON.parse(question.options); // Options might be a JSON string 
+                } catch (e) {
+                    options = question.options; // If it's already an array
+                }
+
+                options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.classList.add('answer-option');
+                    button.innerHTML = `<i class="far fa-circle"></i> ${option}`;
+                    button.addEventListener('click', function() {
+                        document.querySelectorAll('.answer-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                            opt.innerHTML = opt.innerHTML.replace('<i class="fas fa-check"></i>', '<i class="far fa-circle"></i>');
+                        });
+                        this.classList.add('selected');
+                        this.innerHTML = this.innerHTML.replace('<i class="far fa-circle"></i>', '<i class="fas fa-check"></i>');
+                        selectedAnswer = option;
+                    });
+                    answersGrid.appendChild(button);
+                });
+
+                // Update navigation button text
+                const nextButton = document.getElementById('next-question-btn');
+                if (currentQuestionIndex === quizQuestions.length - 1) {
+                    nextButton.textContent = 'Submit Quiz';
+                } else {
+                    nextButton.textContent = 'Next Question';
+                }
+
+                // Update active question button
+                document.querySelectorAll('.question-btn').forEach(btn => btn.classList.remove('active'));
+                const currentQuestionBtn = document.querySelector(`.question-btn[data-question-index="${index}"]`);
+                if (currentQuestionBtn) {
+                    currentQuestionBtn.classList.add('active');
+                }
+            }
+
+            // Function to render question navigation buttons
+            function renderQuestionButtons() {
+                const container = document.getElementById('question-numbers-container');
+                container.innerHTML = '';
+                quizQuestions.forEach((_, index) => {
+                    const button = document.createElement('button');
+                    button.classList.add('question-btn');
+                    if (index === currentQuestionIndex) {
+                        button.classList.add('active');
+                    }
+                    button.textContent = index + 1;
+                    button.setAttribute('data-question-index', index); // Custom attribute to store index
+                    button.addEventListener('click', () => displayQuestion(index));
+                    container.appendChild(button);
+                });
+            }
+
+            // Function to submit the answer
+            async function submitAnswer() {
+                if (selectedAnswer === null) {
+                    alert('Please select an answer before proceeding.');
+                    return;
+                }
+
+                const currentQuizItem = quizQuestions[currentQuestionIndex];
+                const quizId = currentQuizItem.id;
+
+                try {
+                    const response = await fetch('http://localhost:3000/api/quizzes/submit', { // 
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`, // 
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            quizId: quizId,
+                            userAnswer: selectedAnswer
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) { // 200 OK 
+                        alert(data.message); // e.g., "Kuis berhasil dikirim! Anda mendapatkan 10 XP." 
+                        // You can update XP/level display if needed using data.user_status 
+                        if (data.quiz_status.isCorrect) {
+                            console.log('Correct answer!');
+                        } else {
+                            console.log(`Incorrect! Correct answer was: ${data.quiz_status.correctAnswer}`);
+                        }
+                    } else {
+                        if (response.status === 400) { // Bad Request 
+                            alert('Submission failed: Invalid quiz ID or answer.');
+                        } else if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
+                            alert('Session expired. Please log in again.');
+                            localStorage.removeItem('jwtToken');
+                            window.location.href = 'sign-in.html';
+                        } else if (response.status === 404) { // Not Found 
+                            alert('Quiz not found or already submitted.');
+                        } else {
+                            alert(`Submission failed: ${data.message || 'Unknown error.'}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error submitting quiz:', error);
+                    alert('An error occurred during quiz submission. Please try again.');
+                }
+            }
+
+            // Event listener for Next/Submit button
+            document.getElementById('next-question-btn').addEventListener('click', async function() {
+                await submitAnswer(); // Submit the current answer
+
+                if (currentQuestionIndex < quizQuestions.length - 1) {
+                    currentQuestionIndex++;
+                    displayQuestion(currentQuestionIndex);
+                } else {
+                    // Quiz finished
+                    clearInterval(timerInterval); // Stop the timer
+                    alert('Quiz completed!');
+                    // Redirect to module detail or dashboard
+                    window.location.href = `detail-module.html?moduleId=${moduleId}`;
+                }
+            });
+
+            // Timer functionality
+            const timerElement = document.getElementById('time-remaining');
+
+            function updateTimer() {
+                if (timeRemaining > 0) {
+                    timeRemaining -= 0.01;
+                    timerElement.textContent = timeRemaining.toFixed(2);
+                } else {
+                    clearInterval(timerInterval);
+                    alert('Time is up! Quiz finished.');
+                    // Optionally, submit current answer or mark as incorrect
+                    // submitAnswer(); // You might want to automatically submit
+                    window.location.href = `detail-module.html?moduleId=${moduleId}`; // Redirect
+                }
+            }
+
+            function startTimer() {
+                if (timerInterval) clearInterval(timerInterval); // Clear any existing timer
+                timerInterval = setInterval(updateTimer, 10);
+            }
+
+            // Initial fetch of quiz questions
+            fetchQuizQuestions();
+        });
+    </script>
 </body>
 </html>

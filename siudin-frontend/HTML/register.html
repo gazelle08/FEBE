@@ -10,7 +10,6 @@
 </head>
 <body>
     <main class="container">
-        <!-- Left Section - Branding -->
         <section class="branding-section">
             <h1 class="welcome-title">Welcome to Si<span>Udin</span></h1>
             <div class="logo-container">
@@ -20,7 +19,6 @@
             </div>
         </section>
 
-        <!-- Right Section - Registration Form -->
         <section class="form-section">
             <div class="form-container">
                 <header class="form-header">
@@ -60,15 +58,15 @@
                         <legend class="form-label">Jenjang Pendidikan</legend>
                         <div class="radio-group">
                             <label class="radio-label">
-                                <input type="radio" name="education" value="sd-mi" class="radio-input">
+                                <input type="radio" name="education" value="SD/MI" class="radio-input">
                                 <span class="radio-text">SD/MI</span>
                             </label>
                             <label class="radio-label">
-                                <input type="radio" name="education" value="smp-mts" class="radio-input">
+                                <input type="radio" name="education" value="SMP/MTs" class="radio-input">
                                 <span class="radio-text">SMP/MTs</span>
                             </label>
                             <label class="radio-label">
-                                <input type="radio" name="education" value="sma-smk-ma" class="radio-input">
+                                <input type="radio" name="education" value="SMA/SMK/MA" class="radio-input">
                                 <span class="radio-text">SMA/SMK/MA</span>
                             </label>
                         </div>
@@ -78,11 +76,11 @@
                         <legend class="form-label">Gender</legend>
                         <div class="radio-group">
                             <label class="radio-label">
-                                <input type="radio" name="gender" value="laki-laki" class="radio-input">
+                                <input type="radio" name="gender" value="Laki-Laki" class="radio-input">
                                 <span class="radio-text">Laki-Laki</span>
                             </label>
                             <label class="radio-label">
-                                <input type="radio" name="gender" value="perempuan" class="radio-input">
+                                <input type="radio" name="gender" value="Perempuan" class="radio-input">
                                 <span class="radio-text">Perempuan</span>
                             </label>
                         </div>
@@ -91,15 +89,15 @@
                     <div class="social-signup">
                         <p class="social-text">Or Sign Up with</p>
                         <div class="social-buttons">
-                            <button type="button" class="social-btn google-btn" onclick="window.location.href='https://accounts.google.com/'">
+                            <button type="button" class="social-btn google-btn" onclick="window.location.href='http://localhost:3000/api/auth/google'">
                                 <img src="../Asset/Logo Google.png" alt="Google" class="social-icon">
                                 <span class="social-label">Google</span>
                             </button>
-                            <button type="button" class="social-btn apple-btn" onclick="window.location.href='https://appleid.apple.com/'">
+                            <button type="button" class="social-btn apple-btn" onclick="window.location.href='http://localhost:3000/api/auth/apple'">
                                 <img src="../Asset/Logo Apple.png" alt="Apple" class="social-icon">
                                 <span class="social-label">Apple</span>
                             </button>
-                            <button type="button" class="social-btn facebook-btn" onclick="window.location.href='https://www.facebook.com/'">
+                            <button type="button" class="social-btn facebook-btn" onclick="window.location.href='http://localhost:3000/api/auth/facebook'">
                                 <img src="../Asset/Logo Facebook.png" alt="Facebook" class="social-icon">
                                 <span class="social-label">Facebook</span>
                             </button>
@@ -112,5 +110,61 @@
         </section>
     </main>
     <script src="../Java Script/toggle.js"></script>
+    <script>
+        document.querySelector('.registration-form').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const dateOfBirth = document.getElementById('birthDate').value;
+            const educationLevel = document.querySelector('input[name="education"]:checked')?.value;
+            const gender = document.querySelector('input[name="gender"]:checked')?.value;
+
+            // Basic validation
+            if (!fullName || !email || !password || !dateOfBirth || !educationLevel || !gender) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fullName,
+                        email,
+                        password,
+                        dateOfBirth,
+                        educationLevel,
+                        gender
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) { // Check if response status is 2xx
+                    alert(data.message); // "User registered successfully." 
+                    window.location.href = 'sign-in.html'; // Redirect to login page
+                } else {
+                    // Handle specific error codes
+                    if (response.status === 400) { // Bad Request 
+                        alert('Registration failed: Missing required fields or invalid data.');
+                    } else if (response.status === 409) { // Conflict 
+                        alert('Registration failed: Email or username already exists.');
+                    } else if (response.status === 500) { // Internal Server Error 
+                         alert('Registration failed: An unexpected error occurred on the server.');
+                    } else {
+                        alert(`Registration failed: ${data.message || 'Unknown error.'}`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error during registration:', error);
+                alert('An error occurred during registration. Please try again.');
+            }
+        });
+    </script>
 </body>
 </html>

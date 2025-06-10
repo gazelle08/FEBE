@@ -10,7 +10,6 @@
 </head>
 <body>
     <main class="container">
-        <!-- Left Section - Branding -->
         <section class="branding-section">
             <h1 class="welcome-title">Welcome to Si<span>Udin</span></h1>
             <div class="logo-container">
@@ -20,7 +19,6 @@
             </div>
         </section>
 
-        <!-- Right Section - Registration Form -->
         <section class="form-section">
             <div class="form-container">
                 <header class="form-header">
@@ -47,26 +45,84 @@
                     <div class="social-signup">
                         <p class="social-text">Or Sign In with</p>
                         <div class="social-buttons">
-                            <button type="button" class="social-btn google-btn" onclick="window.location.href='https://accounts.google.com/'">
+                            <button type="button" class="social-btn google-btn" onclick="window.location.href='http://localhost:3000/api/auth/google'">
                                 <img src="../Asset/Logo Google.png" alt="Google" class="social-icon">
                                 <span class="social-label">Google</span>
                             </button>
-                            <button type="button" class="social-btn apple-btn" onclick="window.location.href='https://appleid.apple.com/'">
+                            <button type="button" class="social-btn apple-btn" onclick="window.location.href='http://localhost:3000/api/auth/apple'">
                                 <img src="../Asset/Logo Apple.png" alt="Apple" class="social-icon">
                                 <span class="social-label">Apple</span>
                             </button>
-                            <button type="button" class="social-btn facebook-btn" onclick="window.location.href='https://www.facebook.com/'">
+                            <button type="button" class="social-btn facebook-btn" onclick="window.location.href='http://localhost:3000/api/auth/facebook'">
                                 <img src="../Asset/Logo Facebook.png" alt="Facebook" class="social-icon">
                                 <span class="social-label">Facebook</span>
                             </button>
                         </div>
                     </div>
 
-                    <button type="submit" class="register-btn">Register</button>
+                    <button type="submit" class="register-btn">Sign In</button>
                 </form>
             </div>
         </section>
     </main>
     <script src="../Java Script/toggle.js"></script>
+    <script>
+        document.querySelector('.registration-form').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                alert('Please enter your email and password.');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) { // Check if response status is 2xx
+                    localStorage.setItem('jwtToken', data.token); // Store the JWT token 
+                    // You might want to store user data too, e.g., localStorage.setItem('userData', JSON.stringify(data.user));
+                    alert(data.message); // "Login successful." 
+                    window.location.href = 'dashboard.html'; // Redirect to dashboard or home page
+                } else {
+                    if (response.status === 400) { // Bad Request
+                        alert('Login failed: Missing email or password.');
+                    } else if (response.status === 401) { // Unauthorized 
+                        alert('Login failed: Invalid credentials.');
+                    } else if (response.status === 500) { // Internal Server Error 
+                        alert('Login failed: An unexpected server error occurred.');
+                    } else {
+                        alert(`Login failed: ${data.message || 'Unknown error.'}`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                alert('An error occurred during login. Please try again.');
+            }
+        });
+
+        // This is for handling the OAuth callbacks.
+        // In a real application, the backend would redirect to the frontend URL with the token.
+        // You'd then parse the token from the URL and store it.
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        if (token) {
+            localStorage.setItem('jwtToken', token);
+            window.location.href = 'dashboard.html'; // Redirect after successful OAuth login
+        }
+    </script>
 </body>
 </html>
