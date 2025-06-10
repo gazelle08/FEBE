@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiUdin - Learning Platform</title>
+    <link rel="stylesheet" href="../CSS/home.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Navigation -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="brand-name">SiUdin</span>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active">
+                    <a href="#" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link">
+                        Fitur <i class="fas fa-chevron-down"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Dashboard</a>
+                </li>
+            </ul>
+            
+            <div class="nav-actions">
+                <button class="notification-btn">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <div class="user-profile">
+                    <img src="/placeholder.svg?height=32&width=32" alt="User Profile" class="profile-img">
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Welcome Section -->
+        <section class="welcome-section">
+            <div class="welcome-card">
+                <div class="welcome-content">
+                    <h1 class="welcome-title">Hello, Siti</h1>
+                    <div class="user-info">
+                        <img src="/placeholder.svg?height=40&width=40" alt="Siti Lestari" class="user-avatar">
+                        <div class="user-details">
+                            <h3 class="user-name">Siti Lestari</h3>
+                            <div class="user-stats">
+                                <span class="level-badge">Level 1</span>
+                                <span class="xp-count">0 XP</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="class-selector">
+                    <label for="class-select">Pilih kelas:</label>
+                    <select id="class-select" class="class-dropdown">
+                        <option value="11">Kelas 11</option>
+                        <option value="10">Kelas 10</option>
+                        <option value="12">Kelas 12</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Section -->
+        <section class="search-section">
+            <h2 class="search-title">Search</h2>
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Search your favorite lessons">
+                <button class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Daily Missions Section -->
+        <section class="missions-section">
+            <div class="missions-header">
+                <h2 class="missions-title">Your Daily Missions</h2>
+                <p class="missions-subtitle">Complete missions to earn XP, badges, and level up faster!</p>
+                
+                <div class="progress-indicator">
+                    <div class="progress-step completed">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="progress-line completed"></div>
+                    <div class="progress-step completed">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step">03</div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step">04</div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step">05</div>
+                </div>
+            </div>
+
+            <div class="missions-content">
+                <div class="missions-list">
+                    <div class="mission-card">
+                        <div class="mission-icon">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="mission-info">
+                            <h3 class="mission-title">Watch 2 Learning Videos</h3>
+                            <p class="mission-desc">Watch any 2 Learning Videos</p>
+                            <p class="mission-time">Time limit: Today (23:50)</p>
+                            <p class="mission-reward">Reward: 50 XP</p>
+                        </div>
+                        <button class="mission-btn primary">Watch Video</button>
+                    </div>
+
+                    <div class="mission-card">
+                        <div class="mission-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="mission-info">
+                            <h3 class="mission-title">Complete 1 Quiz</h3>
+                            <p class="mission-desc">Complete any 1 Quiz</p>
+                            <p class="mission-time">Time limit: Today (23:50)</p>
+                            <p class="mission-reward">Reward: 30 XP</p>
+                        </div>
+                        <button class="mission-btn secondary">View Quizzes</button>
+                    </div>
+
+                    <div class="mission-card">
+                        <div class="mission-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="mission-info">
+                            <h3 class="mission-title">Complete 3 Daily Missions</h3>
+                            <p class="mission-desc">Complete 3 missions in one day</p>
+                            <p class="mission-time">Time limit: Today (23:50)</p>
+                        </div>
+                        <button class="mission-btn tertiary">Complete</button>
+                    </div>
+                </div>
+
+                <div class="xp-card">
+                    <h3 class="xp-title">Today's XP</h3>
+                    <div class="xp-progress">
+                        <span class="xp-current">90</span>
+                        <span class="xp-separator">/</span>
+                        <span class="xp-total">150</span>
+                    </div>
+                    <div class="xp-bar">
+                        <div class="xp-fill" style="width: 60%"></div>
+                    </div>
+                    
+                    <div class="level-info">
+                        <h4 class="current-level-title">Current Level</h4>
+                        <p class="current-level">Level 5</p>
+                        
+                        <h4 class="next-unlock-title">Next Unlock</h4>
+                        <p class="next-unlock">Exclusive Biology Module - High School (200 XP)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommended Modules Section -->
+        <section class="modules-section">
+            <div class="modules-header">
+                <h2 class="modules-title">Recommended Modules</h2>
+                <p class="modules-subtitle">SiUdin is a platform that can help increase school children's interest and knowledge.</p>
+            </div>
+
+            <div class="modules-grid">
+                <div class="module-card">
+                    <div class="module-image">
+                        <img src="/placeholder.svg?height=120&width=200" alt="Pengantar Untuk Pecahan">
+                        <button class="play-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Pengantar Untuk Pecahan</h3>
+                        <p class="module-subject">Matematika • 5th Grade</p>
+                        <button class="module-action-btn">Continue</button>
+                    </div>
+                    <div class="module-progress">
+                        <span class="progress-text">50% Complete</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <div class="module-image">
+                        <img src="/placeholder.svg?height=120&width=200" alt="Hukum Pemindahan & Pembiasan">
+                        <button class="play-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Hukum Pemindahan & Pembiasan</h3>
+                        <p class="module-subject">Physics • 11th Grade</p>
+                        <button class="module-action-btn">Continue</button>
+                    </div>
+                    <div class="module-progress">
+                        <span class="progress-text">Not Started</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <div class="module-image">
+                        <img src="/placeholder.svg?height=120&width=200" alt="Partikel Penyusun Benda dan Perubahannya">
+                        <button class="play-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Partikel Penyusun Benda dan Perubahannya</h3>
+                        <p class="module-subject">Science • 7th Grade</p>
+                        <button class="module-action-btn">Start</button>
+                    </div>
+                    <div class="module-progress">
+                        <span class="progress-text">Not Started</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <div class="module-image">
+                        <img src="/placeholder.svg?height=120&width=200" alt="Ruang Lingkup Biologi">
+                        <button class="play-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Ruang Lingkup Biologi</h3>
+                        <p class="module-subject">Biology • 10th Grade</p>
+                        <button class="module-action-btn">Start</button>
+                    </div>
+                    <div class="module-progress">
+                        <span class="progress-text">Not Started</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="module-card">
+                    <div class="module-image">
+                        <img src="/placeholder.svg?height=120&width=200" alt="Piramida Ekologi dan Siklus Biokimia">
+                        <button class="play-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                    <div class="module-content">
+                        <h3 class="module-title">Piramida Ekologi dan Siklus Biokimia</h3>
+                        <p class="module-subject">Chemistry • 11th Grade</p>
+                        <button class="module-action-btn">Start</button>
+                    </div>
+                    <div class="module-progress">
+                        <span class="progress-text">Not Started</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

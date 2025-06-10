@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - SiUdin</title>
+    <link rel="stylesheet" href="../CSS/edit-profile.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="brand-name">SiUdin</span>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link">
+                        Fitur <i class="fas fa-chevron-down"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link active">Dashboard</a>
+                </li>
+            </ul>
+            
+            <div class="nav-actions">
+                <button class="notification-btn">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <div class="user-avatar">
+                    <img src="../Asset/avatar-dashboard.png" alt="User Avatar">
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Profile Settings</h1>
+            
+            <form class="profile-form">
+                <div class="avatar-section">
+                    <div class="avatar-container">
+                        <img src="../Asset/avatar-dashboard.png" alt="Profile Avatar" class="profile-avatar">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fullName" class="form-label">Nama Lengkap</label>
+                    <input type="text" id="fullName" class="form-input" value="Siti Lestari">
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" class="form-input" value="siti1@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" class="form-input" value="siti1234">
+                        <button type="button" class="input-icon" onclick="togglePassword()">
+                            <i class="fas fa-eye" id="passwordToggle"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="birthDate" class="form-label">Tanggal Lahir</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="birthDate" class="form-input" value="11/04/2007" readonly>
+                        <span class="input-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="education" class="form-label">Jenjang Pendidikan</label>
+                    <div class="dropdown-wrapper">
+                        <button type="button" class="dropdown-btn" onclick="toggleDropdown()">
+                            <span id="selectedEducation">Kelas 7 - Kurikulum Merdeka</span>
+                            <i class="fas fa-chevron-down" id="dropdownArrow"></i>
+                        </button>
+                        <div class="dropdown-menu" id="educationDropdown">
+                            <div class="dropdown-item" onclick="selectEducation('Kelas 7 - Kurikulum Merdeka')">Kelas 7 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" onclick="selectEducation('Kelas 8 - Kurikulum Merdeka')">Kelas 8 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" onclick="selectEducation('Kelas 9 - Kurikulum Merdeka')">Kelas 9 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" onclick="selectEducation('Kelas 10 - Kurikulum Merdeka')">Kelas 10 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" onclick="selectEducation('Kelas 11 - Kurikulum Merdeka')">Kelas 11 - Kurikulum Merdeka</div>
+                            <div class="dropdown-item" onclick="selectEducation('Kelas 12 - Kurikulum Merdeka')">Kelas 12 - Kurikulum Merdeka</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary">Back To Home</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const passwordToggle = document.getElementById('passwordToggle');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordToggle.classList.remove('fa-eye');
+                passwordToggle.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                passwordToggle.classList.remove('fa-eye-slash');
+                passwordToggle.classList.add('fa-eye');
+            }
+        }
+
+        function toggleDropdown() {
+            const dropdown = document.getElementById('educationDropdown');
+            const arrow = document.getElementById('dropdownArrow');
+            
+            dropdown.classList.toggle('show');
+            arrow.classList.toggle('rotate');
+        }
+
+        function selectEducation(value) {
+            document.getElementById('selectedEducation').textContent = value;
+            document.getElementById('educationDropdown').classList.remove('show');
+            document.getElementById('dropdownArrow').classList.remove('rotate');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdownWrapper = document.querySelector('.dropdown-wrapper');
+            if (!dropdownWrapper.contains(event.target)) {
+                document.getElementById('educationDropdown').classList.remove('show');
+                document.getElementById('dropdownArrow').classList.remove('rotate');
+            }
+        });
+    </script>
+</body>
+</html>
