@@ -76,7 +76,7 @@ body {
 }
 
 .form-container {
-    background: linear-gradient(135deg, #6bb6a8, #4a9b8e);
+    background: linear-gradient(135deg, #0B7077, #9c9999);
     border-radius: 20px;
     padding: 2.5rem;
     width: 100%;
@@ -183,6 +183,18 @@ body {
 .password-container .form-input {
     width: 100%;
     padding-right: 2.5rem; 
+}
+
+/* Password Hint */
+.password-hint {
+    color: #666;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* For dark backgrounds, you might want to adjust the color */
+.form-container .password-hint {
+    color: rgba(31, 30, 30, 0.7);
 }
 
 /* Date Container */
