@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missions - SiUdin</title>
+    <link rel="stylesheet" href="../CSS/missions.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h1 class="brand-name">SiUdin</h1>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle">
+                        Fitur <i class="fas fa-chevron-down"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Dashboard</a>
+                </li>
+            </ul>
+            
+            <div class="nav-actions">
+                <button class="notification-btn">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <div class="user-profile">
+                    <img src="/placeholder.svg?height=40&width=40" alt="User Profile" class="profile-img">
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Missions</h1>
+            
+            <div class="welcome-section">
+                <h2 class="welcome-text">Welcome back, Siti!</h2>
+                <div class="user-stats">
+                    <span class="xp-badge">10 XP</span>
+                    <span class="level-badge">Level 1</span>
+                </div>
+            </div>
+
+            <div class="missions-grid">
+                <section class="progress-card">
+                    <div class="progress-content">
+                        <h3 class="progress-title">You have completed 3 out of 4 daily task. Great work!</h3>
+                        
+                        <p class="progress-description">
+                            Complete all tasks in the "Daily Challenges" section on the right side of this page to earn XP and get closer to your next trophy
+                        </p>
+                        
+                        <div class="progress-circle">
+                            <div class="circle-progress" data-progress="70">
+                                <span class="progress-text">70%</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="daily-challenges">
+                    <h2 class="section-title">Daily Challenges</h2>
+                    
+                    <div class="challenges-section">
+                        <h3 class="subsection-title">Completed</h3>
+                        
+                        <div class="challenge-item completed" onclick="location.href='module.html'">
+                            <div class="challenge-content">
+                                <span class="challenge-code">MTH 001:</span>
+                                <span class="challenge-name">Pengantar untuk Pecahan</span>
+                            </div>
+                            <div class="challenge-status">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="challenge-item completed" onclick="location.href='module.html'">
+                            <div class="challenge-content">
+                                <span class="challenge-code">MTH 002:</span>
+                                <span class="challenge-name">Persamaan Linear Satu Variabel</span>
+                            </div>
+                            <div class="challenge-status">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="challenges-section">
+                        <h3 class="subsection-title uncompleted">Uncompleted</h3>
+                        
+                        <div class="challenge-item uncompleted" onclick="location.href='module.html'">
+                            <div class="challenge-content">
+                                <span class="challenge-code">PHY 001:</span>
+                                <span class="challenge-name">Hukum Pemantuan & Pembiasan</span>
+                            </div>
+                            <div class="challenge-time">15.00</div>
+                        </div>
+                        
+                        <div class="challenge-item uncompleted" onclick="location.href='module.html'">
+                            <div class="challenge-content">
+                                <span class="challenge-code">BIO 001:</span>
+                                <span class="challenge-name">Ruang Lingkup Biologi</span>
+                            </div>
+                            <div class="challenge-time">15.00</div>
+                        </div>
+                        
+                        <div class="challenge-item uncompleted" onclick="location.href='module.html'">
+                            <div class="challenge-content">
+                                <span class="challenge-code">IPA 001:</span>
+                                <span class="challenge-name">Partikel Penyusun Benda dan Perubahanya</span>
+                            </div>
+                            <div class="challenge-time">15.00</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

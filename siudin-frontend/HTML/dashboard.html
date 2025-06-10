@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiUdin Dashboard</title>
+    <link rel="stylesheet" href="../CSS/dashboard.css">
+    <!-- Google Fonts - Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Navigation -->
+        <header class="header">
+            <nav class="navbar">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <span class="logo-text">SiUdin</span>
+                </div>
+                
+                <ul class="nav-menu">
+                    <li><a href="#" class="nav-link">Home</a></li>
+                    <li class="dropdown">
+                        <a href="#" class="nav-link">
+                            Fitur <i class="fas fa-chevron-down"></i>
+                        </a>
+                    </li>
+                    <li><a href="#" class="nav-link active">Dashboard</a></li>
+                </ul>
+                
+                <div class="nav-actions">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <div class="user-avatar">
+                        <img src="../Asset/avatar-dashboard.png" alt="User Avatar">
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="main-content">
+            <!-- Profile Section -->
+            <section class="profile-section">
+                <div class="profile-background">
+                    <div class="gradient-shapes"></div>
+                </div>
+                <div class="profile-content">
+                    <div class="profile-info">
+                        <div class="profile-avatar">
+                            <img src="../Asset/avatar-dashboard.png" alt="Siti Lestari">
+                        </div>
+                        <div class="profile-details">
+                            <h1 class="profile-name">Siti Lestari</h1>
+                            <p class="profile-class">Kelas 7</p>
+                            <div class="profile-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Bandung, Indonesia</span>
+                            </div>
+                            <div class="level-badge">
+                                <span>Level 1</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="logout-btn">Log Out</button>
+                </div>
+            </section>
+
+            <!-- Summary Section -->
+            <section class="summary-section">
+                <h2 class="summary-title">SUMMARY</h2>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">980 XP</div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <div class="stat-number">15</div>
+                        <div class="stat-label">Module completed</div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <div class="stat-number">45 Minutes</div>
+                        <div class="stat-label">Time Spent Learning</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Navigation Cards -->
+            <section class="navigation-cards">
+                <a href="edit-profile.html" class="nav-card">
+                    <div class="card-icon settings">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <span class="card-title">Profile Settings</span>
+                </a>
+
+                <a href="../HTML/modul.html" class="nav-card">
+                    <div class="card-icon course">
+                        <i class="fas fa-play"></i>
+                    </div>
+                    <span class="card-title">My Course</span>
+                </a>
+
+                <a href="leaderboard.html" class="nav-card">
+                    <div class="card-icon leaderboard">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <span class="card-title">Leaderboard</span>
+                </a>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

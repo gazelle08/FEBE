@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiUdin - My Quiz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../CSS/quiz-page.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo-section">
+            <div class="logo">SiUdin</div>
+            <div class="brand-name">SiUdin</div>
+        </div>
+        
+        <nav class="nav-menu">
+            <a href="#" class="nav-item">Home</a>
+            <a href="#" class="nav-item active">Fitur <i class="fas fa-chevron-down"></i></a>
+            <a href="#" class="nav-item">Dashboard</a>
+        </nav>
+        
+        <div class="user-section">
+            <i class="fas fa-bell notification-bell"></i>
+            <div class="user-avatar"></div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <h1 class="page-title">My Quiz</h1>
+        
+        <div class="quiz-container">
+            <aside class="hint-section">
+                <h3 class="hint-title"><i class="fas fa-lightbulb hint-icon"></i>Hint</h3>
+                <p class="hint-content">
+                    Ingat, simbol bilangan bulat biasanya diambil dari kata dalam bahasa Jerman, yaitu Zahlen, yang berarti angka atau bilangan.
+                </p>
+            </aside>
+            
+            <section class="quiz-area">
+                <div class="question-box">
+                    Apa simbol yang mewakili bilangan bulat dalam matematika?
+                </div>
+                
+                <div class="answers-grid">
+                    <button class="answer-option">
+                        <i class="far fa-circle"></i>
+                        I
+                    </button>
+                    <button class="answer-option">
+                        <i class="far fa-circle"></i>
+                        Z
+                    </button>
+                    <button class="answer-option selected">
+                        <i class="fas fa-check"></i>
+                        N
+                    </button>
+                    <button class="answer-option">
+                        <i class="far fa-circle"></i>
+                        Q
+                    </button>
+                </div>
+                
+                <div class="navigation-buttons">
+                    <button class="nav-button back-button">
+                        <i class="fas fa-arrow-left"></i>
+                        Back To Video
+                    </button>
+                    <button class="nav-button next-button">
+                        Next Question
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+            
+            <aside class="time-section">
+                <div class="time-label">Time remaining:</div>
+                <div class="time-remaining">15.00</div>
+                <div class="question-numbers">
+                    <button class="question-btn active" onclick="goToQuestion(1)">1</button>
+                    <button class="question-btn" onclick="goToQuestion(2)">2</button>
+                    <button class="question-btn" onclick="goToQuestion(3)">3</button>
+                    <button class="question-btn" onclick="goToQuestion(4)">4</button>
+                    <button class="question-btn row-3" onclick="goToQuestion(5)">5</button>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- External JavaScript -->
+    <script src="../Java Script/quiz-question.js"></script>
+</body>
+</html>
