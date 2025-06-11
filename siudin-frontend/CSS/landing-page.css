@@ -188,7 +188,6 @@ body {
     background: #1a9a92;
 }
 
-/* Hero Section */
 .hero {
     text-align: center;
     padding: 60px 0 40px;
@@ -411,7 +410,7 @@ body {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 30px;
     margin-bottom: 60px;
 }
@@ -434,16 +433,6 @@ body {
 .stat-label {
     font-size: 18px;
     color: #666;
-}
-
-.thumbs-up {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.thumbs-icon {
-    font-size: 48px;
 }
 
 .elevate-section {
@@ -477,7 +466,6 @@ body {
     line-height: 1.6;
 }
 
-/* App Download */
 .app-download {
     padding: 60px 0;
     text-align: center;
@@ -499,6 +487,7 @@ body {
     background: white;
     cursor: pointer;
     transition: all 0.3s;
+    gap: 1px;
 }
 
 .download-btn:hover {
@@ -518,7 +507,7 @@ body {
 
 /* Footer */
 .footer {
-    background: rgba(19, 94, 115, 0.90);
+    background: rgba(13, 63, 77, 0.9);
     color: white;
     padding: 60px 0 20px;
 }
@@ -534,6 +523,9 @@ body {
     font-size: 20px;
     font-weight: 600;
     margin-bottom: 20px;
+    span{
+        color: #20b2aa;
+    }
 }
 
 .footer-section ul {
@@ -689,10 +681,6 @@ body {
         grid-template-columns: 1fr;
         gap: 30px;
         text-align: center;
-    }
-    
-    .illustration {
-        height: 300px;
     }
 }
 
