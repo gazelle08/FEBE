@@ -47,12 +47,12 @@ async function importMlDataset() {
       
       const combinedQuestionAndAnswerText = record['Pertanyaan'] || null;
       let actualQuestionsText = null;
-      let actualAnswerKeysText = null;
+      let rawAnswerKeysText = null; 
 
       if (combinedQuestionAndAnswerText) {
           const parts = combinedQuestionAndAnswerText.split('Kunci Jawaban:');
           actualQuestionsText = parts[0] ? parts[0].trim() : null;
-          actualAnswerKeysText = parts[1] ? parts[1].trim() : null;
+          rawAnswerKeysText = parts[1] ? parts[1].trim() : null;
       }
 
       const title = `${mataPelajaran} - ${materi} (${subMateri})`;
@@ -99,7 +99,7 @@ async function importMlDataset() {
         topic,
         mlFeatures ? JSON.stringify(mlFeatures) : null,
         actualQuestionsText, 
-        actualAnswerKeysText 
+        rawAnswerKeysText 
       ]);
 
       let moduleId = moduleResult.insertId;
@@ -113,11 +113,12 @@ async function importMlDataset() {
           }
       }
 
-      if (actualQuestionsText && actualAnswerKeysText) {
+
+      if (actualQuestionsText && rawAnswerKeysText) {
         try {
           const questionsArray = actualQuestionsText.split(/\n\s*(?=\d+\.\s*)/).filter(q => q.trim() !== '');
           
-          const answerKeysCleaned = actualAnswerKeysText.split('\n').map(a => {
+          const answerKeyLetters = rawAnswerKeysText.split('\n').map(a => {
             const match = a.trim().match(/^[a-d]/i); 
             return match ? match[0].toLowerCase() : null;
           }).filter(Boolean); 
@@ -132,15 +133,22 @@ async function importMlDataset() {
             let match;
 
             const tempQuestionWithOptions = fullQuestionText;
-            const localOptionsRegex = new RegExp(optionsRegex); // Create new regex instance for each question
+            const localOptionsRegex = new RegExp(optionsRegex); 
             while ((match = localOptionsRegex.exec(tempQuestionWithOptions)) !== null) {
-                currentOptions.push(match[1].trim());
+                currentOptions.push(match[1].trim()); 
             }
 
             questionOnly = fullQuestionText.replace(optionsRegex, '').replace(/^\d+\.\s*/, '').trim();
 
-            let correctAnswer = answerKeysCleaned[i] || null;
-
+            let correctAnswerText = null;
+            const correctLetter = answerKeyLetters[i];
+            if (correctLetter) {
+                const optionIndex = correctLetter.charCodeAt(0) - 'a'.charCodeAt(0);
+                if (optionIndex >= 0 && optionIndex < currentOptions.length) {
+                    correctAnswerText = currentOptions[optionIndex]; 
+                }
+            }
+            
             const quizXpReward = 10; 
 
             const quizInsertQuery = `
@@ -154,13 +162,13 @@ async function importMlDataset() {
             `;
 
             await connection.execute(quizInsertQuery, [
-              moduleId,
+              moduleId, 
               questionOnly,
-              JSON.stringify(currentOptions),
-              correctAnswer,
+              JSON.stringify(currentOptions), 
+              correctAnswerText,
               quizXpReward
             ]);
-            console.log(`    Successfully inserted quiz ${i + 1} for module ${title}`);
+            console.log(`    Successfully inserted quiz ${i + 1} for module ID ${moduleId} (${title})`);
           }
         } catch (parseError) {
           console.warn(`Warning: Could not parse quizzes for module: ${title}. Error: ${parseError.message}`);

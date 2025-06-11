@@ -62,7 +62,7 @@ const submitQuiz = async (req, res) => {
     const quizResult = {
       isCorrect: false,
       xpEarned: 0,
-      correctAnswer: quiz.correct_answer
+      correctAnswer: quiz.correct_answer 
     };
 
     const [userBeforeQuizRows] = await connection.execute('SELECT xp, level, xp_this_month FROM users WHERE id = ? FOR UPDATE', [userId]);
@@ -71,12 +71,15 @@ const submitQuiz = async (req, res) => {
     let currentLevel = userBeforeQuiz.level;
     let currentXpThisMonth = userBeforeQuiz.xp_this_month || 0;
 
-    if (userAnswer === quiz.correct_answer) {
+    const normalizedCorrectAnswer = String(quiz.correct_answer).trim().toLowerCase();
+    const normalizedUserAnswer = String(userAnswer).trim().toLowerCase();
+
+    if (normalizedUserAnswer === normalizedCorrectAnswer) {
       isCorrect = true;
       xpEarned = quiz.xp_reward;
       quizResult.isCorrect = true;
       quizResult.xpEarned = xpEarned;
-      quizResult.correctAnswer = null; 
+      quizResult.correctAnswer = null;
 
       let totalXpAfterQuiz = currentXp + xpEarned;
       let totalXpThisMonthAfterQuiz = currentXpThisMonth + xpEarned;
@@ -90,8 +93,7 @@ const submitQuiz = async (req, res) => {
       }
       xpForNextLevel = (calculatedLevel * 100) - totalXpAfterQuiz;
 
-      await connection.execute('UPDATE users SET xp = ?, level = ?, xp_this_month = ? WHERE id = ?',
-        [totalXpAfterQuiz, calculatedLevel, totalXpThisMonthAfterQuiz, userId]);
+      await connection.execute('UPDATE users SET xp = ?, level = ?, xp_this_month = ? WHERE id = ?', [totalXpAfterQuiz, calculatedLevel, totalXpThisMonthAfterQuiz, userId]);
       console.log(`User ${userId} gained ${xpEarned} XP for correct quiz ${quizId}. Total XP: ${totalXpAfterQuiz}`);
       
       currentXp = totalXpAfterQuiz;
@@ -99,13 +101,12 @@ const submitQuiz = async (req, res) => {
       currentXpThisMonth = totalXpThisMonthAfterQuiz;
 
     } else {
-      quizResult.correctAnswer = quiz.correct_answer;
       message = 'Quiz submitted. Your answer was incorrect.';
     }
 
     await connection.execute(
       'INSERT INTO user_quiz_attempts (user_id, quiz_id, module_id, is_correct, score) VALUES (?, ?, ?, ?, ?)',
-      [userId, quizId, quiz.module_id, isCorrect ? quiz.xp_reward : 0] // Score is XP earned for this attempt
+      [userId, quizId, quiz.module_id, isCorrect, xpEarned]
     );
 
     await connection.execute(
@@ -114,7 +115,7 @@ const submitQuiz = async (req, res) => {
     );
 
     const [completeQuizMissions] = await connection.execute(
-      `SELECT id, required_completion_count, xp_reward FROM missions WHERE type = 'complete_quiz'` // Include xp_reward
+      `SELECT id, required_completion_count, xp_reward FROM missions WHERE type = 'complete_quiz'`
     );
     if (completeQuizMissions.length > 0) {
       for (const mission of completeQuizMissions) {
@@ -161,7 +162,7 @@ const submitQuiz = async (req, res) => {
 
     if (dailyCompleteQuizMissions.length > 0) {
       for (const mission of dailyCompleteQuizMissions) {
-        if (!mission.is_completed) { 
+        if (!mission.is_completed) {
             const newDailyProgress = mission.current_progress + 1;
             const isDailyMissionCompleted = newDailyProgress >= mission.required_completion_count;
             await connection.execute(
@@ -183,7 +184,6 @@ const submitQuiz = async (req, res) => {
         }
       }
     }
-
 
     await connection.commit();
 

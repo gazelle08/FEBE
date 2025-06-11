@@ -32,7 +32,7 @@
     <main class="main-content">
         <h1 class="page-title">My Quiz</h1>
         
-        <div class="quiz-container">
+        <div class="quiz-container" id="quiz-container">
             <aside class="hint-section">
                 <h3 class="hint-title"><i class="fas fa-lightbulb hint-icon"></i>Hint</h3>
                 <p class="hint-content" id="hint-content">
@@ -67,16 +67,40 @@
                     </div>
             </aside>
         </div>
+
+        <div id="quiz-review-section" class="quiz-review-container hidden">
+            <h2 class="review-header">Quiz Results</h2>
+            <div class="review-summary">
+                <div class="summary-item">
+                    <span class="summary-icon summary-correct"><i class="fas fa-check-circle"></i></span>
+                    Correct: <span id="correct-answers-count">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-icon summary-incorrect"><i class="fas fa-times-circle"></i></span>
+                    Incorrect: <span id="incorrect-answers-count">0</span>
+                </div>
+            </div>
+            <div class="review-details" id="review-details-list">
+                </div>
+            <div class="review-actions">
+                <button class="nav-button back-button" id="back-to-module-btn">Back to Module</button>
+                <button class="nav-button next-button" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+            </div>
+        </div>
     </main>
 
-    <script src="../Java Script/quiz-question.js"></script>
     <script>
+        // Mengubah totalQuizTime menjadi 0.25 menit (15 detik / 60 detik/menit)
+        const totalQuizTimeSeconds = 15.00; 
+        let timeRemaining = totalQuizTimeSeconds; // Tetap pakai detik untuk hitungan mundur yang presisi
+        let timerInterval;
+
         let quizQuestions = [];
         let currentQuestionIndex = 0;
         let selectedAnswer = null;
-        const totalQuizTime = 15.00; // Total time for the quiz in seconds
-        let timeRemaining = totalQuizTime;
-        let timerInterval;
+        let correctAnswersCount = 0; // Track correct answers
+        let incorrectAnswersCount = 0; // Track incorrect answers
+        let quizResults = []; // Store results for each question (isCorrect, userAnswer, correctAnswer)
 
         document.addEventListener('DOMContentLoaded', async function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -89,13 +113,19 @@
                 return;
             }
 
+            // Set the moduleId for the "Back to Module" button in review section
+            document.getElementById('back-to-module-btn').onclick = function() {
+                window.location.href = `detail-module.html?moduleId=${moduleId}`;
+            };
+
+
             // Function to fetch quiz questions
             async function fetchQuizQuestions() {
                 try {
-                    const response = await fetch(`http://localhost:3000/api/quizzes/module/${moduleId}`, { // 
+                    const response = await fetch(`http://localhost:3000/api/quizzes/module/${moduleId}`, { 
                         method: 'GET',
                         headers: {
-                            'Authorization': `Bearer ${token}`, // 
+                            'Authorization': `Bearer ${token}`, 
                             'Content-Type': 'application/json'
                         }
                     });
@@ -104,6 +134,8 @@
                     if (response.ok) {
                         quizQuestions = data;
                         if (quizQuestions.length > 0) {
+                            document.getElementById('quiz-container').classList.remove('hidden');
+                            document.getElementById('quiz-review-section').classList.add('hidden');
                             displayQuestion(currentQuestionIndex);
                             startTimer();
                             renderQuestionButtons();
@@ -112,11 +144,11 @@
                             window.location.href = `detail-module.html?moduleId=${moduleId}`;
                         }
                     } else {
-                        if (response.status === 403) { // Forbidden 
+                        if (response.status === 403) { 
                             alert('You must complete the module before accessing its quiz.');
-                        } else if (response.status === 404) { // Not Found 
+                        } else if (response.status === 404) { 
                             alert('No quiz found for this module, or module is not yet ready for quiz.');
-                        } else if (response.status === 401) { // Unauthorized 
+                        } else if (response.status === 401) { 
                             alert('Session expired. Please log in again.');
                             localStorage.removeItem('jwtToken');
                             window.location.href = 'sign-in.html';
@@ -147,15 +179,24 @@
 
                 let options;
                 try {
-                    options = JSON.parse(question.options); // Options might be a JSON string 
+                    options = JSON.parse(question.options);
                 } catch (e) {
-                    options = question.options; // If it's already an array
+                    options = question.options;
                 }
 
                 options.forEach(option => {
                     const button = document.createElement('button');
                     button.classList.add('answer-option');
-                    button.innerHTML = `<i class="far fa-circle"></i> ${option}`;
+                    // Check if this question was already answered and highlight user's previous choice
+                    const prevAttempt = quizResults.find(r => r.questionIndex === index);
+                    if (prevAttempt && prevAttempt.userAnswer === option) {
+                        button.classList.add('selected');
+                        button.innerHTML = `<i class="fas fa-check"></i> ${option}`;
+                        selectedAnswer = option; // Re-select if navigating back
+                    } else {
+                        button.innerHTML = `<i class="far fa-circle"></i> ${option}`;
+                    }
+
                     button.addEventListener('click', function() {
                         document.querySelectorAll('.answer-option').forEach(opt => {
                             opt.classList.remove('selected');
@@ -170,6 +211,7 @@
 
                 // Update navigation button text
                 const nextButton = document.getElementById('next-question-btn');
+                // *** PERBAIKAN: Tombol Submit Quiz di Pertanyaan Terakhir ***
                 if (currentQuestionIndex === quizQuestions.length - 1) {
                     nextButton.textContent = 'Submit Quiz';
                 } else {
@@ -177,7 +219,7 @@
                 }
 
                 // Update active question button
-                document.querySelectorAll('.question-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.question-btn').forEach(btn => btn.classList.remove('active', 'answered-correctly', 'answered-incorrectly'));
                 const currentQuestionBtn = document.querySelector(`.question-btn[data-question-index="${index}"]`);
                 if (currentQuestionBtn) {
                     currentQuestionBtn.classList.add('active');
@@ -194,8 +236,16 @@
                     if (index === currentQuestionIndex) {
                         button.classList.add('active');
                     }
+                    const result = quizResults.find(r => r.questionIndex === index);
+                    if (result) {
+                        if (result.isCorrect) {
+                            button.classList.add('answered-correctly');
+                        } else {
+                            button.classList.add('answered-incorrectly');
+                        }
+                    }
                     button.textContent = index + 1;
-                    button.setAttribute('data-question-index', index); // Custom attribute to store index
+                    button.setAttribute('data-question-index', index);
                     button.addEventListener('click', () => displayQuestion(index));
                     container.appendChild(button);
                 });
@@ -205,17 +255,19 @@
             async function submitAnswer() {
                 if (selectedAnswer === null) {
                     alert('Please select an answer before proceeding.');
-                    return;
+                    return false; // Indicate submission failed
                 }
 
                 const currentQuizItem = quizQuestions[currentQuestionIndex];
                 const quizId = currentQuizItem.id;
+                const originalQuestion = currentQuizItem.question; // Store original question text
+                const originalOptions = currentQuizItem.options; // Store original options
 
                 try {
-                    const response = await fetch('http://localhost:3000/api/quizzes/submit', { // 
+                    const response = await fetch('http://localhost:3000/api/quizzes/submit', {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${token}`, // 
+                            'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
@@ -226,46 +278,134 @@
 
                     const data = await response.json();
 
-                    if (response.ok) { // 200 OK 
-                        alert(data.message); // e.g., "Kuis berhasil dikirim! Anda mendapatkan 10 XP." 
-                        // You can update XP/level display if needed using data.user_status 
-                        if (data.quiz_status.isCorrect) {
-                            console.log('Correct answer!');
+                    if (response.ok) {
+                        // Store the result for review
+                        const resultData = {
+                            questionIndex: currentQuestionIndex,
+                            questionText: originalQuestion,
+                            options: originalOptions,
+                            userAnswer: selectedAnswer,
+                            isCorrect: data.quiz_status.isCorrect,
+                            correctAnswer: data.quiz_status.correctAnswer, // This is the correct answer returned by BE
+                            xpEarned: data.quiz_status.xpEarned
+                        };
+
+                        const resultIndex = quizResults.findIndex(r => r.questionIndex === currentQuestionIndex);
+                        if (resultIndex > -1) {
+                            quizResults[resultIndex] = resultData;
                         } else {
-                            console.log(`Incorrect! Correct answer was: ${data.quiz_status.correctAnswer}`);
+                            quizResults.push(resultData);
                         }
+
+                        if (data.quiz_status.isCorrect) {
+                            correctAnswersCount++;
+                            // alert(`Correct! You earned ${data.quiz_status.xpEarned} XP.`); // Hapus alert ini
+                        } else {
+                            incorrectAnswersCount++;
+                            // alert(`Incorrect. The correct answer was: ${data.quiz_status.correctAnswer}.`); // Hapus alert ini
+                        }
+                        
+                        // Update question button status
+                        const qBtn = document.querySelector(`.question-btn[data-question-index="${currentQuestionIndex}"]`);
+                        if (qBtn) {
+                            qBtn.classList.remove('active', 'answered-correctly', 'answered-incorrectly'); // Remove active for correct styling
+                            if (data.quiz_status.isCorrect) {
+                                qBtn.classList.add('answered-correctly');
+                            } else {
+                                qBtn.classList.add('answered-incorrectly');
+                            }
+                        }
+                        return true; // Indicate submission successful
                     } else {
-                        if (response.status === 400) { // Bad Request 
-                            alert('Submission failed: Invalid quiz ID or answer.');
-                        } else if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
+                        if (response.status === 401 || response.status === 403) {
                             alert('Session expired. Please log in again.');
                             localStorage.removeItem('jwtToken');
                             window.location.href = 'sign-in.html';
-                        } else if (response.status === 404) { // Not Found 
-                            alert('Quiz not found or already submitted.');
-                        } else {
-                            alert(`Submission failed: ${data.message || 'Unknown error.'}`);
+                            return false;
                         }
+                        // alert(`Submission failed: ${data.message || 'Unknown error.'}`); // Hapus alert ini
+                        console.error('Quiz submission error:', data); // Tetap log error di console
+                        return false; // Indicate submission failed
                     }
                 } catch (error) {
                     console.error('Error submitting quiz:', error);
-                    alert('An error occurred during quiz submission. Please try again.');
+                    alert('An error occurred during quiz submission. Please try again.'); // Pertahankan alert ini untuk error jaringan
+                    return false; // Indicate submission failed
                 }
+            }
+
+            // Function to show quiz results review
+            function showQuizReview() {
+                clearInterval(timerInterval); // Stop the timer
+                document.getElementById('quiz-container').classList.add('hidden');
+                document.getElementById('quiz-review-section').classList.remove('hidden');
+
+                document.getElementById('correct-answers-count').textContent = correctAnswersCount;
+                document.getElementById('incorrect-answers-count').textContent = incorrectAnswersCount;
+
+                const reviewDetailsList = document.getElementById('review-details-list');
+                reviewDetailsList.innerHTML = ''; // Clear previous review items
+
+                quizResults.forEach(result => {
+                    const reviewItem = document.createElement('div');
+                    reviewItem.classList.add('review-question-item');
+
+                    let optionsHtml = '';
+                    let parsedOptions = [];
+                    try {
+                        parsedOptions = JSON.parse(result.options);
+                    } catch (e) {
+                        parsedOptions = result.options;
+                    }
+
+                    parsedOptions.forEach(opt => {
+                        let optionClass = '';
+                        let optionIcon = '';
+                        
+                        // Check if this option is the user's selected answer
+                        if (result.userAnswer === opt) {
+                            optionClass = 'review-user-answer'; // Apply user's answer style
+                            if (result.isCorrect) {
+                                optionIcon = '<i class="fas fa-check-circle review-status-icon summary-correct"></i>'; // Correct icon for user's correct answer
+                            } else {
+                                optionIcon = '<i class="fas fa-times-circle review-status-icon summary-incorrect"></i>'; // Incorrect icon for user's wrong answer
+                            }
+                        } 
+                        
+                        // If user's answer was incorrect, also highlight the true correct answer
+                        // Perbandingan harus sama persis dengan yang ada di database setelah perubahan import script
+                        if (!result.isCorrect && String(result.correctAnswer).trim().toLowerCase() === String(opt).trim().toLowerCase()) {
+                            optionClass = 'review-correct-answer'; // Apply correct answer style
+                            optionIcon = '<i class="fas fa-check-circle review-status-icon summary-correct"></i>'; // Correct icon
+                        }
+                        
+                        optionsHtml += `<div class="review-answer ${optionClass}">${opt} ${optionIcon}</div>`;
+                    });
+
+                    reviewItem.innerHTML = `
+                        <div class="review-question-text">Q${result.questionIndex + 1}: ${result.questionText}</div>
+                        ${optionsHtml}
+                        <div class="review-answer">Your Answer: <span class="review-user-answer">${result.userAnswer}</span></div>
+                        ${!result.isCorrect ? `<div class="review-answer">Correct Answer: <span class="review-correct-answer">${result.correctAnswer}</span></div>` : ''}
+                        <div class="review-answer">Status: ${result.isCorrect ? '<span class="summary-correct">Correct</span>' : '<span class="summary-incorrect">Incorrect</span>'}</div>
+                        <div class="review-answer">XP Earned: ${result.xpEarned}</div>
+                    `;
+                    reviewDetailsList.appendChild(reviewItem);
+                });
             }
 
             // Event listener for Next/Submit button
             document.getElementById('next-question-btn').addEventListener('click', async function() {
-                await submitAnswer(); // Submit the current answer
+                const submissionSuccessful = await submitAnswer();
 
-                if (currentQuestionIndex < quizQuestions.length - 1) {
-                    currentQuestionIndex++;
-                    displayQuestion(currentQuestionIndex);
-                } else {
-                    // Quiz finished
-                    clearInterval(timerInterval); // Stop the timer
-                    alert('Quiz completed!');
-                    // Redirect to module detail or dashboard
-                    window.location.href = `detail-module.html?moduleId=${moduleId}`;
+                if (submissionSuccessful) {
+                    if (currentQuestionIndex < quizQuestions.length - 1) {
+                        currentQuestionIndex++;
+                        displayQuestion(currentQuestionIndex);
+                    } else {
+                        // Quiz finished
+                        showQuizReview(); // Show results review instead of alert
+                    }
                 }
             });
 
@@ -274,20 +414,32 @@
 
             function updateTimer() {
                 if (timeRemaining > 0) {
-                    timeRemaining -= 0.01;
-                    timerElement.textContent = timeRemaining.toFixed(2);
+                    // Calculate minutes and seconds
+                    const minutes = Math.floor(timeRemaining / 60);
+                    const seconds = Math.floor(timeRemaining % 60);
+                    const milliseconds = Math.floor((timeRemaining * 100) % 100);
+
+                    // Format to MM:SS.ms
+                    const formattedTime = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+                    
+                    timerElement.textContent = formattedTime;
+                    timeRemaining -= 0.01; // Decrease by 10ms for accurate display
                 } else {
                     clearInterval(timerInterval);
-                    alert('Time is up! Quiz finished.');
-                    // Optionally, submit current answer or mark as incorrect
-                    // submitAnswer(); // You might want to automatically submit
-                    window.location.href = `detail-module.html?moduleId=${moduleId}`; // Redirect
+                    timerElement.textContent = "00:00.00"; // Ensure it shows 00:00.00 at end
+                    // showQuizReview(); // Show results even if time is up - already handled by next logic below
+                    // Auto-submit and review if time runs out on the last question
+                    // Or just show review if it's not the last question but time runs out
+                    alert('Waktu habis! Kuis selesai.');
+                    showQuizReview(); 
                 }
             }
 
             function startTimer() {
-                if (timerInterval) clearInterval(timerInterval); // Clear any existing timer
-                timerInterval = setInterval(updateTimer, 10);
+                if (timerInterval) clearInterval(timerInterval);
+                timeRemaining = totalQuizTimeSeconds; // Reset time for current quiz instance
+                timerInterval = setInterval(updateTimer, 10); // Update every 10 milliseconds
             }
 
             // Initial fetch of quiz questions
