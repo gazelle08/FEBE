@@ -108,16 +108,71 @@ body {
 }
 
 .nav-link.active{
-    color: #2196F3;
+    color: #2377bb;
     background-color: rgba(33, 150, 243, 0.1);
 }
+
 .nav-link:hover {
-    color: #20b2aa;
+    color: #397bdf;
 }
 
-.dropdown-arrow {
+/* Dropdown Container */
+.dropdown {
+    position: relative;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 10px 0;
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    border: 1px solid #e0e0e0;
+    li{
+        list-style: none;
+    }
+}
+
+/* Show dropdown on hover */
+.dropdown:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Dropdown Items */
+.dropdown-item {
+    display: block;
+    padding: 8px 20px;
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: #2196F3;
+}
+
+/* Dropdown Arrow Animation */
+.nav-link .fa-chevron-down {
     margin-left: 5px;
     font-size: 12px;
+    transition: transform 0.3s;
+}
+
+.dropdown:hover .nav-link .fa-chevron-down {
+    transform: rotate(180deg);
 }
 
 .auth-button {
