@@ -20,7 +20,7 @@
             
             <ul class="nav-menu">
                 <li class="nav-item">
-                    <a href="#" class="nav-link">Home</a>
+                    <a href="home.html" class="nav-link">Home</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a href="#" class="nav-link">
@@ -28,7 +28,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link active">Dashboard</a>
+                    <a href="dashboard.html" class="nav-link active">Dashboard</a>
                 </li>
             </ul>
             
@@ -53,72 +53,30 @@
                         <div class="crown crown-silver">
                             <i class="fas fa-crown"></i>
                         </div>
-                        <div class="avatar avatar-2"></div>
+                        <div class="avatar avatar-2" style="background-image: url('../Asset/avatar-dashboard.png');"></div>
+                        <span class="username" id="top2-username"></span>
+                        <span class="score" id="top2-score"></span>
                     </div>
                     <div class="character character-1">
                         <div class="crown crown-gold">
                             <i class="fas fa-crown"></i>
                         </div>
-                        <div class="avatar avatar-1"></div>
+                        <div class="avatar avatar-1" style="background-image: url('../Asset/avatar-dashboard.png');"></div>
+                        <span class="username" id="top1-username"></span>
+                        <span class="score" id="top1-score"></span>
                     </div>
                     <div class="character character-3">
                         <div class="crown crown-bronze">
                             <i class="fas fa-crown"></i>
                         </div>
-                        <div class="avatar avatar-3"></div>
+                        <div class="avatar avatar-3" style="background-image: url('../Asset/avatar-dashboard.png');"></div>
+                        <span class="username" id="top3-username"></span>
+                        <span class="score" id="top3-score"></span>
                     </div>
                 </div>
 
                 <div class="leaderboard-card">
-                    <div class="leaderboard-item rank-1">
-                        <div class="rank-info">
-                            <div class="user-avatar-small">
-                                <div class="crown-small">
-                                    <i class="fas fa-crown"></i>
-                                </div>
-                                <div class="avatar-small avatar-1-small"></div>
-                            </div>
-                            <span class="username">Siti Lestari</span>
-                        </div>
-                        <span class="score">980</span>
                     </div>
-                    
-                    <div class="leaderboard-item rank-2">
-                        <div class="rank-info">
-                            <div class="user-avatar-small">
-                                <div class="crown-small">
-                                    <i class="fas fa-crown"></i>
-                                </div>
-                                <div class="avatar-small avatar-2-small"></div>
-                            </div>
-                            <span class="username">Brian</span>
-                        </div>
-                        <span class="score">780</span>
-                    </div>
-                    
-                    <div class="leaderboard-item rank-3">
-                        <div class="rank-info">
-                            <div class="user-avatar-small">
-                                <div class="crown-small">
-                                    <i class="fas fa-crown"></i>
-                                </div>
-                                <div class="avatar-small avatar-3-small"></div>
-                            </div>
-                            <span class="username">Shandy Aulia</span>
-                        </div>
-                        <span class="score">620</span>
-                    </div>
-                    
-                    <div class="leaderboard-item rank-4">
-                        <div class="rank-info">
-                            <div class="user-avatar-small">
-                                <div class="avatar-small avatar-4-small"></div>
-                            </div>
-                            <span class="username">Annisa Besuri</span>
-                        </div>
-                        <span class="score">615</span>
-                    </div>
-                </div>
 
                 <div class="action-buttons">
                     <a href="home.html" class="btn btn-secondary">Back to Home</a>
@@ -127,5 +85,91 @@
             </section>
         </div>
     </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const token = localStorage.getItem('jwtToken'); // Get token if leaderboard is protected
+
+            async function fetchLeaderboard() {
+                try {
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`; // Add token if required
+                    }
+
+                    const response = await fetch('http://localhost:3000/api/leaderboard', { // Fetch from your backend
+                        method: 'GET',
+                        headers: headers
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        const leaderboardCard = document.querySelector('.leaderboard-card');
+                        leaderboardCard.innerHTML = ''; // Clear existing dummy data
+
+                        // Update top 3 illustration
+                        if (data[0]) {
+                            document.getElementById('top1-username').textContent = data[0].username;
+                            document.getElementById('top1-score').textContent = `${data[0].xp} XP (Level ${data[0].level})`;
+                            // Optionally update avatar image for top 3
+                            // document.querySelector('.character-1 .avatar').style.backgroundImage = `url('/path/to/${data[0].username}-avatar.png')`;
+                        }
+                        if (data[1]) {
+                            document.getElementById('top2-username').textContent = data[1].username;
+                            document.getElementById('top2-score').textContent = `${data[1].xp} XP (Level ${data[1].level})`;
+                        }
+                        if (data[2]) {
+                            document.getElementById('top3-username').textContent = data[2].username;
+                            document.getElementById('top3-score').textContent = `${data[2].xp} XP (Level ${data[2].level})`;
+                        }
+
+                        // Populate the main leaderboard list (starting from rank 1)
+                        data.forEach((user, index) => {
+                            const rank = index + 1;
+                            const leaderboardItem = document.createElement('div');
+                            leaderboardItem.classList.add('leaderboard-item', `rank-${rank}`);
+
+                            let crownHtml = '';
+                            if (rank === 1) {
+                                crownHtml = '<div class="crown-small gold"><i class="fas fa-crown"></i></div>';
+                            } else if (rank === 2) {
+                                crownHtml = '<div class="crown-small silver"><i class="fas fa-crown"></i></div>';
+                            } else if (rank === 3) {
+                                crownHtml = '<div class="crown-small bronze"><i class="fas fa-crown"></i></div>';
+                            }
+
+                            leaderboardItem.innerHTML = `
+                                <div class="rank-info">
+                                    <span class="rank-number">${rank}.</span>
+                                    <div class="user-avatar-small">
+                                        ${crownHtml}
+                                        <div class="avatar-small" style="background-image: url('../Asset/avatar-dashboard.png');"></div> 
+                                    </div>
+                                    <span class="username">${user.username}</span>
+                                </div>
+                                <span class="score">${user.xp} XP (Level ${user.level})</span>
+                            `;
+                            leaderboardCard.appendChild(leaderboardItem);
+                        });
+                    } else {
+                        if (response.status === 401 || response.status === 403) {
+                            alert('Session expired. Please log in again.');
+                            localStorage.removeItem('jwtToken');
+                            window.location.href = 'sign-in.html';
+                        } else {
+                            alert(`Failed to load leaderboard: ${data.message || 'Unknown error.'}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching leaderboard data:', error);
+                    alert('An error occurred while loading the leaderboard. Please try again.');
+                }
+            }
+
+            fetchLeaderboard();
+        });
+    </script>
 </body>
 </html>
