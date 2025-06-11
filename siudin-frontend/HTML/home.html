@@ -135,43 +135,43 @@
                 return;
             }
 
-            // Fetch User Profile Data
-            async function fetchUserProfile() {
-                try {
-                    const response = await fetch('http://localhost:3000/api/users/profile', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`, // 
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        document.getElementById('welcome-username').textContent = data.username; // 
-                        document.getElementById('user-full-name').textContent = data.full_name; // 
-                        document.getElementById('user-level').textContent = `Level ${data.level}`; // 
-                        document.getElementById('user-xp').textContent = `${data.xp} XP`; // 
-                        document.getElementById('current-level-info').textContent = `Level ${data.level}`; // 
-
-                        // Placeholder for next unlock info - this typically requires backend logic
-                        // If your backend provides xpForNextLevel, use it. Otherwise, estimate.
-                        // Assuming each level requires increasing XP, you could have a client-side lookup table.
-                        const nextLevelXP = (data.level + 1) * 100; // Example calculation
-                        document.getElementById('next-unlock-info').textContent = `Next Level at ${nextLevelXP} XP`; 
-
-                    } else {
-                        console.error('Failed to fetch user profile:', data.message);
-                        if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
-                            alert('Session expired. Please log in again.');
-                            localStorage.removeItem('jwtToken');
-                            window.location.href = 'sign-in.html';
-                        }
+        async function fetchUserProfile() {
+            try {
+                const response = await fetch('http://localhost:3000/api/users/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
-                } catch (error) {
-                    console.error('Error fetching user profile:', error);
-                }
-            }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('welcome-username').textContent = data.username;
+                    document.getElementById('user-full-name').textContent = data.full_name;
+                    document.getElementById('user-level').textContent = `Level ${data.level}`;
+                    document.getElementById('user-xp').textContent = `${data.xp} XP`;
+                    document.getElementById('current-level-info').textContent = `Level ${data.level}`;
 
+                    const nextLevelXP = (data.level) * 100; // XP needed for the *next* level
+                    const xpIntoCurrentLevel = data.xp % 100; // XP earned in the current level
+                    const progressPercentage = (xpIntoCurrentLevel / 100) * 100;
+
+                    document.getElementById('next-unlock-info').textContent = `Next Level at ${nextLevelXP} XP`;
+                    document.getElementById('xp-fill').style.width = `${progressPercentage}%`;
+                    document.getElementById('today-xp-current').textContent = data.xp; // Total XP
+                    document.getElementById('today-xp-total').textContent = (data.level + 1) * 100; // XP target for next level
+                } else {
+                    console.error('Failed to fetch user profile:', data.message);
+                    if (response.status === 401 || response.status === 403) {
+                        alert('Session expired. Please log in again.');
+                        localStorage.removeItem('jwtToken');
+                        window.location.href = 'sign-in.html';
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching user profile:', error);
+            }
+        }
             // Fetch Daily Missions
             async function fetchDailyMissions() {
                 try {

@@ -110,57 +110,54 @@
         </main>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
-                alert('You need to be logged in to view the dashboard.');
-                window.location.href = 'sign-in.html'; // Redirect to login
-                return;
-            }
+    document.addEventListener('DOMContentLoaded', async function() {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            alert('You need to be logged in to view the dashboard.');
+            window.location.href = 'sign-in.html'; 
+            return;
+        }
 
-            try {
-                const response = await fetch('http://localhost:3000/api/users/dashboard', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`, // Include the JWT token 
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.querySelector('.profile-name').textContent = data.username; // Use username from API 
-                    document.querySelector('.profile-class').textContent = data.education_level || 'N/A'; // Assuming education_level can be derived or fetched 
-                    document.querySelector('.level-badge span').textContent = `Level ${data.level}`; // 
-                    document.getElementById('xp-count').textContent = `${data.xp} XP`; // 
-                    document.getElementById('modules-completed').textContent = data.total_modules_completed; // 
-                    // You might need to calculate or fetch "Time Spent Learning" if the backend doesn't provide it directly
-                    // For now, it's a placeholder. If `total_videos_watched` is number of videos, you might estimate time.
-                    document.getElementById('time-spent').textContent = `${data.total_videos_watched * 10} Minutes`; // Example: 10 minutes per video
-                } else {
-                    if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
-                        alert('Session expired or invalid. Please log in again.');
-                        localStorage.removeItem('jwtToken');
-                        window.location.href = 'sign-in.html';
-                    } else if (response.status === 404) { // Not Found 
-                        alert('User data not found.');
-                    } else {
-                        alert(`Failed to load dashboard data: ${data.message || 'Unknown error.'}`);
-                    }
+        try {
+            const response = await fetch('http://localhost:3000/api/users/dashboard', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`, 
+                    'Content-Type': 'application/json'
                 }
-            } catch (error) {
-                console.error('Error fetching dashboard data:', error);
-                alert('An error occurred while loading your dashboard. Please try again.');
-            }
-
-            // Logout functionality
-            document.querySelector('.logout-btn').addEventListener('click', function() {
-                localStorage.removeItem('jwtToken'); // Clear the token
-                alert('You have been logged out.');
-                window.location.href = 'sign-in.html'; // Redirect to login page
             });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                document.querySelector('.profile-name').textContent = data.username; 
+                document.querySelector('.profile-class').textContent = data.education_level || 'N/A'; 
+                document.querySelector('.level-badge span').textContent = `Level ${data.level}`; 
+                document.getElementById('xp-count').textContent = `${data.xp} XP`; // Total XP
+                document.getElementById('modules-completed').textContent = data.total_modules_completed; 
+                document.getElementById('time-spent').textContent = `${data.total_videos_watched * 10} Minutes`; 
+            } else {
+                if (response.status === 401 || response.status === 403) { 
+                    alert('Session expired or invalid. Please log in again.');
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = 'sign-in.html';
+                } else if (response.status === 404) { 
+                    alert('User data not found.');
+                } else {
+                    alert(`Failed to load dashboard data: ${data.message || 'Unknown error.'}`);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+            alert('An error occurred while loading your dashboard. Please try again.');
+        }
+
+        document.querySelector('.logout-btn').addEventListener('click', function() {
+            localStorage.removeItem('jwtToken'); 
+            alert('You have been logged out.');
+            window.location.href = 'sign-in.html'; 
         });
-    </script>
+    });
+</script>
 </body>
 </html>

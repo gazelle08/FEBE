@@ -17,14 +17,6 @@ async function importMissionDataset() {
     await connection.execute('SET FOREIGN_KEY_CHECKS = 0;');
     console.log('Foreign key checks temporarily disabled.');
 
-    console.log('Truncating existing daily_missions data...');
-    await connection.execute('TRUNCATE TABLE daily_missions');
-    console.log('daily_missions data truncated.');
-
-    console.log('Truncating existing user_missions data...');
-    await connection.execute('TRUNCATE TABLE user_missions');
-    console.log('user_missions data truncated.');
-
     console.log('Truncating existing missions data...');
     await connection.execute('TRUNCATE TABLE missions');
     console.log('missions data truncated.');
@@ -70,11 +62,17 @@ async function importMissionDataset() {
         console.warn(`Skipping record due to invalid XP or Target: ${JSON.stringify(record)}`);
         continue;
       }
+      const missionId = parseInt(record['No'], 10);
+      if (isNaN(missionId)) {
+        console.warn(`Skipping record due to invalid Mission ID: ${JSON.stringify(record)}`);
+        continue;
+      }
 
       const query = `
-                INSERT INTO missions (title, description, xp_reward, badge_reward, type, required_completion_count)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO missions (id, title, description, xp_reward, badge_reward, type, required_completion_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
+                    title = VALUES(title),
                     description = VALUES(description),
                     xp_reward = VALUES(xp_reward),
                     badge_reward = VALUES(badge_reward),
@@ -83,6 +81,7 @@ async function importMissionDataset() {
             `;
 
       await connection.execute(query, [
+        missionId,
         missionTitle,
         description,
         xpReward,
