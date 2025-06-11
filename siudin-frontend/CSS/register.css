@@ -146,7 +146,6 @@ body {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Password Container */
 .password-container {
     position: relative;
     width: 100%;
@@ -181,19 +180,16 @@ body {
     padding-right: 2.5rem; 
 }
 
-/* Password Hint */
 .password-hint {
     color: #666;
     font-size: 0.75rem;
     margin-top: 0.25rem;
 }
 
-/* For dark backgrounds, you might want to adjust the color */
 .form-container .password-hint {
     color: rgba(31, 30, 30, 0.7);
 }
 
-/* Date Container */
 .date-container {
     position: relative;
 }
@@ -231,19 +227,17 @@ fieldset {
     accent-color: #2d5a52;
 }
 
-/* Social Signup */
 .social-signup {
     text-align: center;
     margin: 1rem 0;
 }
 
-/* Divider Styles */
 .divider {
     display: flex;
     align-items: center;
-    margin: 1.5rem auto; /* center the divider */
+    margin: 1.5rem auto; 
     color: #333;
-    max-width: 80%; /* membuat container divider lebih pendek */
+    max-width: 80%;
 }
 
 .divider-line {
@@ -325,7 +319,6 @@ fieldset {
     border-color: #1877f2;
 }
 
-/* Register Button */
 .register-btn {
     background-color: #000;
     color: white;
@@ -354,6 +347,7 @@ fieldset {
     .branding-section {
         min-height: 40vh;
         padding: 1.5rem;
+        gap: 7rem;
     }
     
     .welcome-title {
@@ -364,7 +358,7 @@ fieldset {
     .logo {
         width: 150px;
         height: 150px;
-        margin-bottom: 2rem;
+        margin-bottom: 7rem;
     }
     
     .logo-text {
@@ -396,7 +390,7 @@ fieldset {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1.5rem;
+        gap: 9rem;
     }
     
     .welcome-title {
@@ -409,7 +403,7 @@ fieldset {
         width: 120px;
         height: 120px;
         border-width: 5px;
-        margin-bottom: 0; 
+        margin-bottom: 8rem; 
     }
     
     .form-section {
@@ -452,15 +446,17 @@ fieldset {
         justify-content: center;
         padding: 0.8rem;
     }
-    
-    .social-text::before,
-    .social-text::after {
-        width: 25%; 
-    }
-    
-    .register-btn {
+   
+   .register-btn {
         padding: 0.9rem;
         font-size: 1rem;
+    }
+
+    .divider{
+        display: flex;
+        align-items: center;
+        margin: 1.5rem auto; 
+        max-width: 60%;
     }
 }
 
@@ -468,11 +464,12 @@ fieldset {
 @media screen and (max-width: 480px) {
     .branding-section {
         padding: 1rem 0.5rem;
-        gap: 1rem; 
+        gap: 8rem; 
     }
     
     .welcome-title {
-        font-size: 1.6rem;
+        font-size: 3rem;
+        padding-top: 10rem;
         margin-bottom: 0;
     }
     
@@ -497,10 +494,6 @@ fieldset {
     .form-input {
         padding: 0.6rem 0.9rem;
         font-size: 0.9rem;
-    }
-    
-    .social-text {
-        font-size: 0.8rem;
     }
     
     .social-btn {
