@@ -177,6 +177,23 @@ const logVideoWatch = async (req, res) => {
       [userId, moduleId]
     );
 
+    const videoWatchXp = 10;
+    const [userRows] = await connection.execute('SELECT xp, level, xp_this_month FROM users WHERE id = ? FOR UPDATE', [userId]);
+    const user = userRows[0];
+    let currentXp = user.xp;
+    let currentLevel = user.level;
+    let currentXpThisMonth = user.xp_this_month || 0;
+
+    let totalXpAfterWatch = currentXp + videoWatchXp;
+    let totalXpThisMonthAfterWatch = currentXpThisMonth + videoWatchXp;
+    let calculatedLevel = Math.floor(totalXpAfterWatch / 100) + 1;
+
+    await connection.execute(
+      'UPDATE users SET xp = ?, level = ?, xp_this_month = ? WHERE id = ?',
+      [totalXpAfterWatch, calculatedLevel, totalXpThisMonthAfterWatch, userId]
+    );
+    console.log(`User ${userId} gained ${videoWatchXp} XP for watching video ${moduleId}. Total XP: ${totalXpAfterWatch}`);
+
     const [watchVideoMissions] = await connection.execute(
       `SELECT id, required_completion_count FROM missions WHERE type = 'watch_video'`
     );
@@ -192,7 +209,7 @@ const logVideoWatch = async (req, res) => {
 
     const today = new Date().toISOString().slice(0, 10);
     const [dailyWatchVideoMissions] = await connection.execute(
-      `SELECT m.id, m.required_completion_count, dm.current_progress
+      `SELECT m.id, m.xp_reward, m.required_completion_count, dm.current_progress, dm.is_completed
        FROM daily_missions dm
        JOIN missions m ON dm.mission_id = m.id
        WHERE dm.user_id = ? AND dm.assigned_date = ? AND m.type = 'watch_video'`,
@@ -201,17 +218,43 @@ const logVideoWatch = async (req, res) => {
 
     if (dailyWatchVideoMissions.length > 0) {
       for (const mission of dailyWatchVideoMissions) {
-        const newDailyProgress = mission.current_progress + 1;
-        const isDailyMissionCompleted = newDailyProgress >= mission.required_completion_count;
-        await connection.execute(
-          'UPDATE daily_missions SET current_progress = ?, is_completed = ?, completed_at = ? WHERE user_id = ? AND mission_id = ? AND assigned_date = ?',
-          [newDailyProgress, isDailyMissionCompleted, isDailyMissionCompleted ? new Date() : null, userId, mission.id, today]
-        );
+        if (!mission.is_completed) { 
+            const newDailyProgress = mission.current_progress + 1;
+            const isDailyMissionCompleted = newDailyProgress >= mission.required_completion_count;
+            await connection.execute(
+              'UPDATE daily_missions SET current_progress = ?, is_completed = ?, completed_at = ? WHERE user_id = ? AND mission_id = ? AND assigned_date = ?',
+              [newDailyProgress, isDailyMissionCompleted, isDailyMissionCompleted ? new Date() : null, userId, mission.id, today]
+            );
+
+            if (isDailyMissionCompleted && mission.xp_reward > 0) {
+                const [userAfterDailyMissionRows] = await connection.execute('SELECT xp, level, xp_this_month FROM users WHERE id = ? FOR UPDATE', [userId]);
+                const userAfterDailyMission = userAfterDailyMissionRows[0];
+                let currentXpAfterDaily = userAfterDailyMission.xp;
+                let currentLevelAfterDaily = userAfterDailyMission.level;
+                let currentXpThisMonthAfterDaily = userAfterDailyMission.xp_this_month || 0;
+
+                let totalXpAfterAll = currentXpAfterDaily + mission.xp_reward;
+                let totalXpThisMonthAfterAll = currentXpThisMonthAfterDaily + mission.xp_reward;
+                let finalCalculatedLevel = Math.floor(totalXpAfterAll / 100) + 1;
+
+                await connection.execute('UPDATE users SET xp = ?, level = ?, xp_this_month = ? WHERE id = ?',
+                    [totalXpAfterAll, finalCalculatedLevel, totalXpThisMonthAfterAll, userId]);
+                console.log(`User ${userId} gained ${mission.xp_reward} XP for completing daily video mission ${mission.id}. Total XP: ${totalXpAfterAll}`);
+            }
+        }
       }
     }
 
     await connection.commit(); 
-    res.status(200).json({ message: 'Video watch logged successfully and module marked as completed.' });
+    res.status(200).json({
+        message: 'Video watch logged successfully and module marked as completed.',
+        user_status: {
+            xp: totalXpAfterWatch,
+            level: calculatedLevel,
+            xpThisMonth: totalXpThisMonthAfterWatch,
+            xpForNextLevel: (calculatedLevel * 100) - totalXpAfterWatch
+        }
+    });
   } catch (error) {
     if (connection) {
       await connection.rollback(); 
@@ -231,7 +274,7 @@ const getDashboardData = async (req, res) => {
     connection = await db.getConnection();
     const userId = req.user.id;
 
-    const [userRows] = await connection.execute('SELECT id, username, full_name, email, xp, level FROM users WHERE id = ?', [userId]);
+    const [userRows] = await connection.execute('SELECT id, username, full_name, email, xp, level, education_level, xp_this_month FROM users WHERE id = ?', [userId]);
     const user = userRows[0];
 
     if (!user) {
@@ -266,6 +309,8 @@ const getDashboardData = async (req, res) => {
       username: user.username,
       xp: user.xp,
       level: user.level,
+      education_level: user.education_level, 
+      xp_this_month: user.xp_this_month,
       total_modules_completed: totalCompletedModules,
       total_quizzes_completed: totalQuizzesCompleted,
       total_missions_completed: totalCompletedMissions,
