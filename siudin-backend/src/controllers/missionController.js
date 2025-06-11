@@ -56,8 +56,8 @@ const getDailyMissions = async (req, res) => {
   try {
     connection = await db.getConnection();
     const userId = req.user.id;
-    const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
-    console.log(`[DEBUG] User ID: ${userId}, Today's Date: ${today}`); // DEBUG
+    const today = new Date().toISOString().slice(0, 10);
+    console.log(`[DEBUG] User ID: ${userId}, Today's Date: ${today}`);
 
     const [existingDailyMissions] = await connection.execute(
       'SELECT m.id, m.title, m.description, m.xp_reward, m.badge_reward, m.type, dm.is_completed ' +
@@ -66,11 +66,10 @@ const getDailyMissions = async (req, res) => {
       'WHERE dm.user_id = ? AND dm.assigned_date = ?',
       [userId, today]
     );
-    console.log(`[DEBUG] Existing daily missions count: ${existingDailyMissions.length}`); // DEBUG
+    console.log(`[DEBUG] Existing daily missions count: ${existingDailyMissions.length}`);
 
     if (existingDailyMissions.length === 0) {
-      console.log(`[DEBUG] No existing daily missions, attempting to assign new ones.`); // DEBUG
-      // ... (rest of the logic for assigning new missions)
+      console.log(`[DEBUG] No existing daily missions, attempting to assign new ones.`);
 
       const [availableMissions] = await connection.execute(
         `SELECT m.id, m.title, m.description, m.xp_reward, m.badge_reward, m.type, m.required_completion_count
@@ -80,26 +79,25 @@ const getDailyMissions = async (req, res) => {
          ORDER BY RAND() LIMIT 3`,
         [userId]
       );
-      console.log(`[DEBUG] Available missions to assign: ${availableMissions.length}`); // DEBUG
+      console.log(`[DEBUG] Available missions to assign: ${availableMissions.length}`);
 
       if (availableMissions.length > 0) {
         for (const mission of availableMissions) {
-          console.log(`[DEBUG] Assigning mission ID: ${mission.id}`); // DEBUG
+          console.log(`[DEBUG] Assigning mission ID: ${mission.id}`); 
           await connection.execute(
             'INSERT INTO daily_missions (user_id, mission_id, assigned_date, is_completed, current_progress) VALUES (?, ?, ?, FALSE, 0)',
             [userId, mission.id, today]
           );
         }
-        // ... (fetch and return newly assigned missions)
       } else {
-        console.log(`[DEBUG] No missions available to assign to user ${userId}.`); // DEBUG
+        console.log(`[DEBUG] No missions available to assign to user ${userId}.`); 
         return res.status(200).json([]);
       }
     }
 
     res.status(200).json(existingDailyMissions);
   } catch (error) {
-    console.error('Error fetching daily missions:', error); // DEBUG: Ini adalah error utama
+    console.error('Error fetching daily missions:', error);
     res.status(500).json({ message: 'Server error fetching daily missions.' });
   } finally {
     if (connection) {
