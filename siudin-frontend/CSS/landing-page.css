@@ -141,14 +141,12 @@ body {
     }
 }
 
-/* Show dropdown on hover */
 .dropdown:hover .dropdown-menu {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
 }
 
-/* Dropdown Items */
 .dropdown-item {
     display: block;
     padding: 8px 20px;
@@ -301,22 +299,33 @@ body {
     color: #666;
 }
 
-/* Hero-Image */
-
-
-/* Tagline */
 .tagline {
+    position: relative; 
     text-align: center;
     padding: 60px 0;
+}
+
+.tagline img {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%); 
+    width: 150px; 
+    height: auto;
+    z-index: -1; 
+}
+
+.tagline .container {
+    position: relative; 
 }
 
 .tagline-text {
     font-size: 36px;
     font-weight: 600;
     color: #0B7077;
+    display: inline-block; 
 }
 
-/* Subject Cards */
 #subjects {
     padding: 60px 0;
 }
@@ -334,6 +343,7 @@ body {
     text-align: center;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s;
+    text-decoration: none;
 }
 
 .subject-card:hover {
