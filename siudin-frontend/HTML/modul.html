@@ -83,7 +83,7 @@
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
-            const token = localStorage.getItem('jwtToken'); // Optional, since /modules is public access 
+            const token = localStorage.getItem('jwtToken'); 
 
             const subjectGrids = {
                 'Matematika': document.getElementById('mathematics-modules-grid'),
@@ -95,15 +95,8 @@
 
             async function fetchModules(searchQuery = '') {
                 try {
-                    let url = 'http://localhost:3000/api/modules'; // 
+                    let url = 'http://localhost:3000/api/modules'; 
                     let queryParams = [];
-
-                    // Example: If you have filter dropdowns or search input, construct query parameters
-                    if (searchQuery) {
-                        // Assuming your backend supports searching by title/description based on a 'q' or 'search' parameter
-                        // You'd need to confirm this with your backend developer as it's not explicitly in the docs for /modules 
-                        // For now, let's assume filtering happens on client-side based on returned data
-                    }
 
                     // Reset all grids
                     for (const key in subjectGrids) {
@@ -114,39 +107,38 @@
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json',
-                            ...(token && { 'Authorization': `Bearer ${token}` }) // Only add if token exists 
+                            ...(token && { 'Authorization': `Bearer ${token}` }) 
                         }
                     });
                     const modules = await response.json();
 
                     if (response.ok) {
                         modules.forEach(module => {
-                            // Simple client-side search filtering
                             if (searchQuery && !module.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
                                 !module.description.toLowerCase().includes(searchQuery.toLowerCase()) &&
                                 !module.topic.toLowerCase().includes(searchQuery.toLowerCase())) {
-                                return; // Skip if it doesn't match search query
+                                return; 
                             }
 
                             const moduleCard = document.createElement('article');
                             moduleCard.classList.add('module-card');
-                            // Add a class for specific subjects for styling, e.g., module-card mathematics
                             if (module.topic) {
                                 moduleCard.classList.add(module.topic.toLowerCase().replace(/\s/g, '-'));
                             }
 
-                            // Placeholder for progress: You'd need to fetch user_progress for each module
-                            // or have the /modules endpoint return user_specific_progress if authenticated.
-                            // For now, assume "Not Started" or hardcode progress for demonstration.
-                            const isCompleted = false; // Replace with actual user progress check
+                            const isCompleted = false; 
                             const progressText = isCompleted ? '100% Complete' : 'Not Started';
-                            const progressFillWidth = isCompleted ? '100%' : '0%';
+                            
+                            const isVideoModule = module.video_url && module.video_url.includes('youtube.com');
+                            const moduleTypeInfo = isVideoModule ? 'Video' : '';
+
 
                             moduleCard.innerHTML = `
                                 <div class="module-content">
                                     <h3>${module.title}</h3>
                                     <p class="module-meta">${module.topic} • ${module.class_level} Grade</p>
-                                    <p class="module-duration">${module.video_url ? 'Video' : ''} ${module.video_url ? ' • ' + module.video_url.split('/')[4] + ' min' : ''}</p> <button class="start-btn" onclick="window.location.href='detail-module.html?moduleId=${module.id}'">
+                                    <p class="module-duration">${moduleTypeInfo}</p>
+                                    <button class="start-btn" onclick="window.location.href='detail-module.html?moduleId=${module.id}'">
                                         <span>Start</span>
                                         <i class="fas fa-play"></i>
                                     </button>
@@ -154,7 +146,6 @@
                                 <div class="progress-indicator ${isCompleted ? '' : 'not-started'}">${progressText}</div>
                             `;
 
-                            // Append to the correct subject grid
                             const targetGrid = subjectGrids[module.topic];
                             if (targetGrid) {
                                 targetGrid.appendChild(moduleCard);
@@ -170,10 +161,8 @@
                 }
             }
 
-            // Initial fetch of modules
             fetchModules();
 
-            // Handle search
             document.getElementById('search-button').addEventListener('click', () => {
                 const searchQuery = document.getElementById('search-input').value;
                 fetchModules(searchQuery);

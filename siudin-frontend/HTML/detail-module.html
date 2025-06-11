@@ -38,7 +38,7 @@
 
     <main>
         <section class="video-section">
-            <h2 class="video-title" id="module-video-title">Video Pengantar Untuk Pecahan</h2>
+            <h2 class="video-title" id="module-video-title"></h2>
             <div class="video-container">
                 <iframe 
                     id="module-video-iframe"
@@ -63,11 +63,10 @@
             <div class="description-container">
                 <h3 class="section-title">Description</h3>
                 <p class="description-text" id="module-description">
-                    Pelajari dasar-dasar pecahan melalui visual dan contoh yang sederhana. Pahami bagian-bagian dari suatu kesatuan, dan kenali istilah seperti pembilang dan penyebut. Sangat cocok untuk pemula!
                 </p>
                 <div class="video-meta">
-                    <p><strong>Durasi Video:</strong> <span id="module-duration">10 Menit</span></p>
-                    <p><strong>Tingkat Kesulitan:</strong> <span id="module-difficulty">Dasar</span></p>
+                    <p><strong>Durasi Video:</strong> <span id="module-duration">N/A</span></p>
+                    <p><strong>Tingkat Kesulitan:</strong> <span id="module-difficulty"></span></p>
                     <p><strong>Hingga <span id="module-xp">50XP</span></strong></p>
                 </div>
                 <button class="quiz-btn" id="start-quiz-btn">Start Quiz</button>
@@ -122,15 +121,13 @@
 
             if (!moduleId) {
                 alert('Module ID is missing from the URL.');
-                // Redirect to modules page or show an error
                 window.location.href = 'modul.html';
                 return;
             }
 
-            // Fetch Module Details
             async function fetchModuleDetails() {
                 try {
-                    const response = await fetch(`http://localhost:3000/api/modules/${moduleId}`, { // 
+                    const response = await fetch(`http://localhost:3000/api/modules/${moduleId}`, { 
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json'
@@ -139,19 +136,35 @@
                     const module = await response.json();
 
                     if (response.ok) {
-                        document.getElementById('module-video-title').textContent = module.title; // 
-                        document.getElementById('module-video-iframe').src = module.video_url; // 
-                        document.getElementById('module-description').textContent = module.description; // 
-                        document.getElementById('module-duration').textContent = 'Estimasi: ' + (module.video_url ? '10 Menit' : 'N/A'); // Placeholder, if video duration is not in API
-                        document.getElementById('module-difficulty').textContent = module.difficulty; // 
-                        document.getElementById('module-xp').textContent = module.xp_reward ? `${module.xp_reward}XP` : '50XP'; // Assuming xp_reward is part of module
+                        document.getElementById('module-video-title').textContent = module.title; 
+                        document.getElementById('module-description').textContent = module.description; 
+                        document.getElementById('module-difficulty').textContent = module.difficulty; 
+
+                        if (module.video_url) {
+                            const urlParts = module.video_url.split('/');
+                            let videoId = urlParts[urlParts.length - 1]; 
+                            if (videoId.includes('?')) {
+                                videoId = videoId.split('?')[0];
+                            }
+                            if (videoId.includes('#')) {
+                                videoId = videoId.split('#')[0];
+                            }
+                            const youtubeEmbedUrl = `https://www.youtube.com/embed/${videoId}`;
+                            document.getElementById('module-video-iframe').src = youtubeEmbedUrl; 
+                        } else {
+                            document.getElementById('module-video-iframe').src = '';
+                            console.warn('No video URL available for this module.');
+                        }
+                        
+                        document.getElementById('module-xp').textContent = '50XP'; 
+                        document.getElementById('module-duration').textContent = 'Estimasi: 10 Menit'; 
                     } else {
-                        if (response.status === 404) { // Not Found 
+                        if (response.status === 404) { 
                             alert('Module not found.');
                         } else {
                             alert(`Failed to load module details: ${module.message || 'Unknown error.'}`);
                         }
-                        window.location.href = 'modul.html'; // Redirect back to modules
+                        window.location.href = 'modul.html'; 
                     }
                 } catch (error) {
                     console.error('Error fetching module details:', error);
@@ -160,31 +173,27 @@
                 }
             }
 
-            // Log Video Watch
             async function logVideoWatch() {
                 if (!token) {
                     console.warn('Cannot log video watch: User not logged in.');
                     return;
                 }
                 try {
-                    const response = await fetch('http://localhost:3000/api/users/log-video-watch', { // 
+                    const response = await fetch('http://localhost:3000/api/users/log-video-watch', { 
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${token}`, // 
+                            'Authorization': `Bearer ${token}`, 
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ moduleId: parseInt(moduleId) })
                     });
                     const data = await response.json();
                     if (response.ok) {
-                        console.log('Video watch logged successfully:', data.message); // 
+                        console.log('Video watch logged successfully:', data.message); 
                     } else {
                         console.error('Failed to log video watch:', data.message);
-                        if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
-                            // Handle token expiry or invalid token
+                        if (response.status === 401 || response.status === 403) { 
                             localStorage.removeItem('jwtToken');
-                            // alert('Your session has expired. Please log in again.');
-                            // window.location.href = 'sign-in.html';
                         }
                     }
                 } catch (error) {
@@ -192,7 +201,6 @@
                 }
             }
 
-            // Start Quiz Button handler
             document.getElementById('start-quiz-btn').addEventListener('click', async function() {
                 if (!token) {
                     alert('You need to be logged in to start a quiz.');
@@ -200,11 +208,8 @@
                     return;
                 }
 
-                // First, check if the module is completed (as per API docs: "Modul harus diselesaikan oleh pengguna") 
-                // This check might be implicit in the backend when fetching the quiz, or you might need a separate endpoint.
-                // For direct integration, let's assume calling the quiz endpoint will handle this.
                 try {
-                    const quizCheckResponse = await fetch(`http://localhost:3000/api/quizzes/module/${moduleId}`, { // 
+                    const quizCheckResponse = await fetch(`http://localhost:3000/api/quizzes/module/${moduleId}`, { 
                         method: 'GET',
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -213,15 +218,14 @@
                     });
 
                     if (quizCheckResponse.ok) {
-                        // Module is completed and quiz exists, proceed to quiz page
                         window.location.href = `quiz-page.html?moduleId=${moduleId}`;
                     } else {
                         const errorData = await quizCheckResponse.json();
-                        if (quizCheckResponse.status === 403) { // Forbidden 
+                        if (quizCheckResponse.status === 403) { 
                             alert('You must complete the module before attempting the quiz.');
-                        } else if (quizCheckResponse.status === 404) { // Not Found 
+                        } else if (quizCheckResponse.status === 404) { 
                             alert('No quiz found for this module, or module is not yet ready for quiz.');
-                        } else if (quizCheckResponse.status === 401) { // Unauthorized 
+                        } else if (quizCheckResponse.status === 401) { 
                              alert('Session expired. Please log in again.');
                              localStorage.removeItem('jwtToken');
                              window.location.href = 'sign-in.html';
@@ -235,10 +239,7 @@
                 }
             });
 
-            // Initial fetches
             await fetchModuleDetails();
-            // You might want to log video watch only after a certain duration, or when the video finishes
-            // For demonstration, we'll log it on page load if the user is authenticated.
             logVideoWatch(); 
         });
     </script>
