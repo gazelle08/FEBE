@@ -206,39 +206,6 @@ body {
     line-height: 1.2;
 }
 
-
-.search-container {
-    position: relative;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-.search-input {
-    width: 100%;
-    padding: 15px 50px 15px 20px;
-    border: 2px solid #4e4d4d;
-    border-radius: 20px;
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.3s;
-}
-
-.search-input:focus {
-    border-color: #20b2aa;
-}
-
-.search-button {
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-/* Main Content */
 .main-content {
     padding: 60px 0;
 }
