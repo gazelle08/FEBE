@@ -2,14 +2,11 @@
 const express = require('express');
 const router = express.Router();
 const missionController = require('../controllers/missionController');
-const { verifyToken } = require('../middleware/authMiddleware'); // checkAdminRole is removed
+const { verifyToken } = require('../middleware/authMiddleware'); 
 
-router.get('/', verifyToken, missionController.getAllMissions);
-router.get('/my-missions', verifyToken, missionController.getUserMissions);
+router.get('/', verifyToken, missionController.getAllMissions); 
+router.get('/my-missions', verifyToken, missionController.getUserMissions); 
+router.get('/daily', verifyToken, missionController.getDailyMissions);
 router.post('/complete', verifyToken, missionController.completeMission);
-// Admin-only routes are removed
-// router.post('/', verifyToken, checkAdminRole, missionController.createMission);
-// router.put('/:id', verifyToken, checkAdminRole, missionController.updateMission);
-// router.delete('/:id', verifyToken, checkAdminRole, missionController.deleteMission);
 
 module.exports = router;

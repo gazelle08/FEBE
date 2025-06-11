@@ -16,13 +16,13 @@
                 <span>SiUdin</span>
             </div>
             <ul class="nav-menu">
-                <li><a href="#" class="nav-link">Home</a></li>
+                <li><a href="home.html" class="nav-link">Home</a></li>
                 <li class="nav-dropdown">
                     <a href="#" class="nav-link">
                         Filter <i class="fas fa-chevron-down"></i>
                     </a>
                 </li>
-                <li><a href="#" class="nav-link">Dashboard</a></li>
+                <li><a href="dashboard.html" class="nav-link">Dashboard</a></li>
             </ul>
             <div class="nav-profile">
                 <i class="fas fa-bell"></i>
@@ -38,238 +38,154 @@
             <div class="page-header">
                 <h1>Modules</h1>
                 <div class="search-container">
-                    <input type="text" placeholder="What do you want learn..." class="search-input">
-                    <button class="search-btn">
+                    <input type="text" id="search-input" placeholder="What do you want learn..." class="search-input">
+                    <button class="search-btn" id="search-button">
                         <i class="fas fa-search"></i>
                     </button>
                 </div>
             </div>
 
-            <section class="subject-section">
+            <section class="subject-section" id="mathematics-modules-section">
                 <h2 class="subject-title">Matematika</h2>
-                <div class="modules-grid">
-                    <article class="module-card">
-                        <div class="module-content">
-                            <h3>Pengantar Untuk Pecahan</h3>
-                            <p class="module-meta">Mathematics • Numbers MTKPDF</p>
-                            <p class="module-duration">30 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator">50% Complete</div>
-                    </article>
-
-                    <article class="module-card">
-                        <div class="module-content">
-                            <h3>Persamaan Linear Satu Variabel</h3>
-                            <p class="module-meta">Mathematics • Numbers MTKPDF</p>
-                            <p class="module-duration">30 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator">50% Complete</div>
-                    </article>
-
-                    <article class="module-card">
-                        <div class="module-content">
-                            <h3>Bilangan Berpangkat</h3>
-                            <p class="module-meta">Mathematics • Numbers MTKPDF</p>
-                            <p class="module-duration">30 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator">50% Complete</div>
-                    </article>
-                </div>
+                <div class="modules-grid" id="mathematics-modules-grid">
+                    </div>
                 <button class="resume-learning-btn">Resume Learning</button>
             </section>
 
-            <section class="subject-section">
+            <section class="subject-section" id="physics-modules-section">
                 <h2 class="subject-title">Fisika</h2>
-                <div class="modules-grid">
-                    <article class="module-card physics">
-                        <div class="module-content">
-                            <h3>Hukum Gerak Newton & Penerapannya</h3>
-                            <p class="module-meta">Physics • Motion</p>
-                            <p class="module-duration">45 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-
-                    <article class="module-card physics">
-                        <div class="module-content">
-                            <h3>Fluida Dinamis</h3>
-                            <p class="module-meta">Physics • Fluids</p>
-                            <p class="module-duration">40 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-
-                    <article class="module-card physics">
-                        <div class="module-content">
-                            <h3>Suhu dan Kalor</h3>
-                            <p class="module-meta">Physics • Thermodynamics</p>
-                            <p class="module-duration">35 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-                </div>
+                <div class="modules-grid" id="physics-modules-grid">
+                    </div>
                 <button class="resume-learning-btn">Resume Learning</button>
             </section>
 
-            <section class="subject-section">
+            <section class="subject-section" id="science-modules-section">
                 <h2 class="subject-title">Ilmu Pengetahuan Alam</h2>
-                <div class="modules-grid">
-                    <article class="module-card science">
-                        <div class="module-content">
-                            <h3>Partikel Penyusun Benda dan Makhluk Hidup</h3>
-                            <p class="module-meta">Science • Particles</p>
-                            <p class="module-duration">50 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-
-                    <article class="module-card science">
-                        <div class="module-content">
-                            <h3>Partikel Penyusun Benda dan Perubahannya</h3>
-                            <p class="module-meta">Science • Matter</p>
-                            <p class="module-duration">45 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-
-                    <article class="module-card science">
-                        <div class="module-content">
-                            <h3>Partikel Penyusun Benda dan Perubahannya</h3>
-                            <p class="module-meta">Science • Changes</p>
-                            <p class="module-duration">40 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-                </div>
+                <div class="modules-grid" id="science-modules-grid">
+                    </div>
                 <button class="resume-learning-btn">Resume Learning</button>
             </section>
 
-            <section class="subject-section">
+            <section class="subject-section" id="biology-modules-section">
                 <h2 class="subject-title">Biologi</h2>
-                <div class="modules-grid">
-                    <article class="module-card biology">
-                        <div class="module-content">
-                            <h3>Ruang Lingkup Biologi</h3>
-                            <p class="module-meta">Biology • Introduction</p>
-                            <p class="module-duration">30 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-
-                    <article class="module-card biology">
-                        <div class="module-content">
-                            <h3>Bioteknologi</h3>
-                            <p class="module-meta">Biology • Technology</p>
-                            <p class="module-duration">55 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-
-                    <article class="module-card biology">
-                        <div class="module-content">
-                            <h3>Sintesis Protein</h3>
-                            <p class="module-meta">Biology • Molecular</p>
-                            <p class="module-duration">45 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-                </div>
+                <div class="modules-grid" id="biology-modules-grid">
+                    </div>
                 <button class="resume-learning-btn">Resume Learning</button>
             </section>
 
-            <section class="subject-section">
+            <section class="subject-section" id="chemistry-modules-section">
                 <h2 class="subject-title">Kimia</h2>
-                <div class="modules-grid">
-                    <article class="module-card chemistry">
-                        <div class="module-content">
-                            <h3>Piramida Ekologi dan Siklus Biogeokimia</h3>
-                            <p class="module-meta">Chemistry • Ecology</p>
-                            <p class="module-duration">40 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-
-                    <article class="module-card chemistry">
-                        <div class="module-content">
-                            <h3>Senyawa dan Makromolekul</h3>
-                            <p class="module-meta">Chemistry • Compounds</p>
-                            <p class="module-duration">50 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-
-                    <article class="module-card chemistry">
-                        <div class="module-content">
-                            <h3>Senyawa Karbon Turunan Alkana</h3>
-                            <p class="module-meta">Chemistry • Organic</p>
-                            <p class="module-duration">45 min</p>
-                            <button class="start-btn">
-                                <span>Start</span>
-                                <i class="fas fa-play"></i>
-                            </button>
-                        </div>
-                        <div class="progress-indicator not-started">Not Started</div>
-                    </article>
-                </div>
+                <div class="modules-grid" id="chemistry-modules-grid">
+                    </div>
                 <button class="resume-learning-btn">Resume Learning</button>
             </section>
         </div>
     </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const token = localStorage.getItem('jwtToken'); // Optional, since /modules is public access 
+
+            const subjectGrids = {
+                'Matematika': document.getElementById('mathematics-modules-grid'),
+                'Fisika': document.getElementById('physics-modules-grid'),
+                'Ilmu Pengetahuan Alam': document.getElementById('science-modules-grid'),
+                'Biologi': document.getElementById('biology-modules-grid'),
+                'Kimia': document.getElementById('chemistry-modules-grid')
+            };
+
+            async function fetchModules(searchQuery = '') {
+                try {
+                    let url = 'http://localhost:3000/api/modules'; // 
+                    let queryParams = [];
+
+                    // Example: If you have filter dropdowns or search input, construct query parameters
+                    if (searchQuery) {
+                        // Assuming your backend supports searching by title/description based on a 'q' or 'search' parameter
+                        // You'd need to confirm this with your backend developer as it's not explicitly in the docs for /modules 
+                        // For now, let's assume filtering happens on client-side based on returned data
+                    }
+
+                    // Reset all grids
+                    for (const key in subjectGrids) {
+                        subjectGrids[key].innerHTML = '';
+                    }
+
+                    const response = await fetch(url + (queryParams.length > 0 ? '?' + queryParams.join('&') : ''), {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(token && { 'Authorization': `Bearer ${token}` }) // Only add if token exists 
+                        }
+                    });
+                    const modules = await response.json();
+
+                    if (response.ok) {
+                        modules.forEach(module => {
+                            // Simple client-side search filtering
+                            if (searchQuery && !module.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
+                                !module.description.toLowerCase().includes(searchQuery.toLowerCase()) &&
+                                !module.topic.toLowerCase().includes(searchQuery.toLowerCase())) {
+                                return; // Skip if it doesn't match search query
+                            }
+
+                            const moduleCard = document.createElement('article');
+                            moduleCard.classList.add('module-card');
+                            // Add a class for specific subjects for styling, e.g., module-card mathematics
+                            if (module.topic) {
+                                moduleCard.classList.add(module.topic.toLowerCase().replace(/\s/g, '-'));
+                            }
+
+                            // Placeholder for progress: You'd need to fetch user_progress for each module
+                            // or have the /modules endpoint return user_specific_progress if authenticated.
+                            // For now, assume "Not Started" or hardcode progress for demonstration.
+                            const isCompleted = false; // Replace with actual user progress check
+                            const progressText = isCompleted ? '100% Complete' : 'Not Started';
+                            const progressFillWidth = isCompleted ? '100%' : '0%';
+
+                            moduleCard.innerHTML = `
+                                <div class="module-content">
+                                    <h3>${module.title}</h3>
+                                    <p class="module-meta">${module.topic} • ${module.class_level} Grade</p>
+                                    <p class="module-duration">${module.video_url ? 'Video' : ''} ${module.video_url ? ' • ' + module.video_url.split('/')[4] + ' min' : ''}</p> <button class="start-btn" onclick="window.location.href='detail-module.html?moduleId=${module.id}'">
+                                        <span>Start</span>
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                                <div class="progress-indicator ${isCompleted ? '' : 'not-started'}">${progressText}</div>
+                            `;
+
+                            // Append to the correct subject grid
+                            const targetGrid = subjectGrids[module.topic];
+                            if (targetGrid) {
+                                targetGrid.appendChild(moduleCard);
+                            } else {
+                                console.warn(`No grid found for topic: ${module.topic}`);
+                            }
+                        });
+                    } else {
+                        console.error('Failed to fetch modules:', modules.message);
+                    }
+                } catch (error) {
+                    console.error('Error fetching modules:', error);
+                }
+            }
+
+            // Initial fetch of modules
+            fetchModules();
+
+            // Handle search
+            document.getElementById('search-button').addEventListener('click', () => {
+                const searchQuery = document.getElementById('search-input').value;
+                fetchModules(searchQuery);
+            });
+
+            document.getElementById('search-input').addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    const searchQuery = document.getElementById('search-input').value;
+                    fetchModules(searchQuery);
+                }
+            });
+        });
+    </script>
 </body>
 </html>

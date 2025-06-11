@@ -14,17 +14,17 @@ const getQuizzesByModuleId = async (req, res) => {
     );
 
     if (!progress[0] || !progress[0].is_completed) {
-      return res.status(403).json({ message: 'Module must be completed before accessing its quizzes.' });
+      return res.status(403).json({ message: 'Module must be completed before accessing its quizzes.' }); 
     }
 
     const [quizzes] = await connection.execute('SELECT id, module_id, question, options FROM quizzes WHERE module_id = ?', [moduleId]);
     if (quizzes.length === 0) {
-      return res.status(404).json({ message: 'No quizzes found for this module.' });
+      return res.status(404).json({ message: 'No quizzes found for this module.' }); 
     }
     res.status(200).json(quizzes);
   } catch (error) {
     console.error('Error fetching quizzes by module ID:', error);
-    res.status(500).json({ message: 'Server error fetching quizzes.' });
+    res.status(500).json({ message: 'Server error fetching quizzes.' }); 
   } finally {
     if (connection) {
       connection.release();
@@ -37,7 +37,7 @@ const submitQuiz = async (req, res) => {
   const userId = req.user.id;
 
   if (!quizId || userAnswer === undefined) {
-    return res.status(400).json({ message: 'Quiz ID and user answer are required.' });
+    return res.status(400).json({ message: 'Quiz ID and user answer are required.' }); 
   }
 
   let connection;
@@ -50,7 +50,7 @@ const submitQuiz = async (req, res) => {
 
     if (!quiz) {
       await connection.rollback();
-      return res.status(404).json({ message: 'Quiz not found.' });
+      return res.status(404).json({ message: 'Quiz not found.' }); 
     }
 
     let isCorrect = false;
@@ -89,11 +89,11 @@ const submitQuiz = async (req, res) => {
       } else {
         message = `Quiz submitted successfully! You gained ${xpEarned} XP.`;
       }
-      xpForNextLevel = (calculatedLevel * 100) - totalXpAfterQuiz;
-
+      xpForNextLevel = (calculatedLevel * 100) - totalXpAfterQuiz; 
       await connection.execute('UPDATE users SET xp = ?, level = ?, xp_this_month = ? WHERE id = ?', [totalXpAfterQuiz, calculatedLevel, totalXpThisMonthAfterQuiz, userId]);
     }
 
+    // Catat upaya kuis
     await connection.execute(
       'INSERT INTO user_quiz_attempts (user_id, quiz_id, module_id, is_correct, score) VALUES (?, ?, ?, ?, ?)',
       [userId, quizId, quiz.module_id, isCorrect, isCorrect ? quiz.xp_reward : 0]
@@ -103,6 +103,39 @@ const submitQuiz = async (req, res) => {
       'INSERT INTO user_progress (user_id, module_id, is_completed, completed_at) VALUES (?, ?, TRUE, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE is_completed = TRUE, completed_at = CURRENT_TIMESTAMP',
       [userId, quiz.module_id]
     );
+
+    const [completeQuizMissions] = await connection.execute(
+      `SELECT id, required_completion_count FROM missions WHERE type = 'complete_quiz'`
+    );
+    if (completeQuizMissions.length > 0) {
+      for (const mission of completeQuizMissions) {
+        await connection.execute(
+          'INSERT INTO user_missions (user_id, mission_id, current_progress, is_completed) VALUES (?, ?, 1, FALSE) ' +
+          'ON DUPLICATE KEY UPDATE current_progress = current_progress + 1, is_completed = IF(current_progress + 1 >= ?, TRUE, FALSE)',
+          [userId, mission.id, mission.required_completion_count]
+        );
+      }
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const [dailyCompleteQuizMissions] = await connection.execute(
+      `SELECT m.id, m.required_completion_count, dm.current_progress
+       FROM daily_missions dm
+       JOIN missions m ON dm.mission_id = m.id
+       WHERE dm.user_id = ? AND dm.assigned_date = ? AND m.type = 'complete_quiz'`,
+      [userId, today]
+    );
+
+    if (dailyCompleteQuizMissions.length > 0) {
+      for (const mission of dailyCompleteQuizMissions) {
+        const newDailyProgress = mission.current_progress + 1;
+        const isDailyMissionCompleted = newDailyProgress >= mission.required_completion_count;
+        await connection.execute(
+          'UPDATE daily_missions SET current_progress = ?, is_completed = ?, completed_at = ? WHERE user_id = ? AND mission_id = ? AND assigned_date = ?',
+          [newDailyProgress, isDailyMissionCompleted, isDailyMissionCompleted ? new Date() : null, userId, mission.id, today]
+        );
+      }
+    }
 
     await connection.commit();
 
@@ -120,7 +153,7 @@ const submitQuiz = async (req, res) => {
       await connection.rollback();
     }
     console.error('Error submitting quiz:', error);
-    res.status(500).json({ message: 'Server error submitting quiz.' });
+    res.status(500).json({ message: 'Server error submitting quiz.' }); 
   } finally {
     if (connection) {
       connection.release();

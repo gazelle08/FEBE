@@ -9,7 +9,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Header Navigation -->
     <header class="header">
         <nav class="navbar">
             <div class="nav-brand">
@@ -29,7 +28,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link">Dashboard</a>
+                    <a href="dashboard.html" class="nav-link">Dashboard</a>
                 </li>
             </ul>
             
@@ -44,20 +43,18 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
-        <!-- Welcome Section -->
         <section class="welcome-section">
             <div class="welcome-card">
                 <div class="welcome-content">
-                    <h1 class="welcome-title">Hello, Siti</h1>
+                    <h1 class="welcome-title">Hello, <span id="welcome-username">Siti</span></h1>
                     <div class="user-info">
                         <img src="/placeholder.svg?height=40&width=40" alt="Siti Lestari" class="user-avatar">
                         <div class="user-details">
-                            <h3 class="user-name">Siti Lestari</h3>
+                            <h3 class="user-name" id="user-full-name">Siti Lestari</h3>
                             <div class="user-stats">
-                                <span class="level-badge">Level 1</span>
-                                <span class="xp-count">0 XP</span>
+                                <span class="level-badge" id="user-level">Level 1</span>
+                                <span class="xp-count" id="user-xp">0 XP</span>
                             </div>
                         </div>
                     </div>
@@ -73,7 +70,6 @@
             </div>
         </section>
 
-        <!-- Search Section -->
         <section class="search-section">
             <h2 class="search-title">Search</h2>
             <div class="search-container">
@@ -84,201 +80,236 @@
             </div>
         </section>
 
-        <!-- Daily Missions Section -->
         <section class="missions-section">
             <div class="missions-header">
                 <h2 class="missions-title">Your Daily Missions</h2>
                 <p class="missions-subtitle">Complete missions to earn XP, badges, and level up faster!</p>
                 
-                <div class="progress-indicator">
-                    <div class="progress-step completed">
-                        <i class="fas fa-check"></i>
+                <div class="progress-indicator" id="daily-mission-progress">
                     </div>
-                    <div class="progress-line completed"></div>
-                    <div class="progress-step completed">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="progress-line"></div>
-                    <div class="progress-step">03</div>
-                    <div class="progress-line"></div>
-                    <div class="progress-step">04</div>
-                    <div class="progress-line"></div>
-                    <div class="progress-step">05</div>
-                </div>
             </div>
 
             <div class="missions-content">
-                <div class="missions-list">
-                    <div class="mission-card">
-                        <div class="mission-icon">
-                            <i class="fas fa-play-circle"></i>
-                        </div>
-                        <div class="mission-info">
-                            <h3 class="mission-title">Watch 2 Learning Videos</h3>
-                            <p class="mission-desc">Watch any 2 Learning Videos</p>
-                            <p class="mission-time">Time limit: Today (23:50)</p>
-                            <p class="mission-reward">Reward: 50 XP</p>
-                        </div>
-                        <button class="mission-btn primary">Watch Video</button>
+                <div class="missions-list" id="daily-missions-list">
                     </div>
-
-                    <div class="mission-card">
-                        <div class="mission-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="mission-info">
-                            <h3 class="mission-title">Complete 1 Quiz</h3>
-                            <p class="mission-desc">Complete any 1 Quiz</p>
-                            <p class="mission-time">Time limit: Today (23:50)</p>
-                            <p class="mission-reward">Reward: 30 XP</p>
-                        </div>
-                        <button class="mission-btn secondary">View Quizzes</button>
-                    </div>
-
-                    <div class="mission-card">
-                        <div class="mission-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="mission-info">
-                            <h3 class="mission-title">Complete 3 Daily Missions</h3>
-                            <p class="mission-desc">Complete 3 missions in one day</p>
-                            <p class="mission-time">Time limit: Today (23:50)</p>
-                        </div>
-                        <button class="mission-btn tertiary">Complete</button>
-                    </div>
-                </div>
 
                 <div class="xp-card">
                     <h3 class="xp-title">Today's XP</h3>
                     <div class="xp-progress">
-                        <span class="xp-current">90</span>
+                        <span class="xp-current" id="today-xp-current">0</span>
                         <span class="xp-separator">/</span>
-                        <span class="xp-total">150</span>
+                        <span class="xp-total" id="today-xp-total">150</span>
                     </div>
                     <div class="xp-bar">
-                        <div class="xp-fill" style="width: 60%"></div>
+                        <div class="xp-fill" style="width: 0%" id="xp-fill"></div>
                     </div>
                     
                     <div class="level-info">
                         <h4 class="current-level-title">Current Level</h4>
-                        <p class="current-level">Level 5</p>
+                        <p class="current-level" id="current-level-info">Level 1</p>
                         
                         <h4 class="next-unlock-title">Next Unlock</h4>
-                        <p class="next-unlock">Exclusive Biology Module - High School (200 XP)</p>
+                        <p class="next-unlock" id="next-unlock-info">Loading...</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Recommended Modules Section -->
         <section class="modules-section">
             <div class="modules-header">
                 <h2 class="modules-title">Recommended Modules</h2>
                 <p class="modules-subtitle">SiUdin is a platform that can help increase school children's interest and knowledge.</p>
             </div>
 
-            <div class="modules-grid">
-                <div class="module-card">
-                    <div class="module-image">
-                        <img src="/placeholder.svg?height=120&width=200" alt="Pengantar Untuk Pecahan">
-                        <button class="play-btn">
-                            <i class="fas fa-play"></i>
-                        </button>
-                    </div>
-                    <div class="module-content">
-                        <h3 class="module-title">Pengantar Untuk Pecahan</h3>
-                        <p class="module-subject">Matematika • 5th Grade</p>
-                        <button class="module-action-btn">Continue</button>
-                    </div>
-                    <div class="module-progress">
-                        <span class="progress-text">50% Complete</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 50%"></div>
-                        </div>
-                    </div>
+            <div class="modules-grid" id="recommended-modules-grid">
                 </div>
-
-                <div class="module-card">
-                    <div class="module-image">
-                        <img src="/placeholder.svg?height=120&width=200" alt="Hukum Pemindahan & Pembiasan">
-                        <button class="play-btn">
-                            <i class="fas fa-play"></i>
-                        </button>
-                    </div>
-                    <div class="module-content">
-                        <h3 class="module-title">Hukum Pemindahan & Pembiasan</h3>
-                        <p class="module-subject">Physics • 11th Grade</p>
-                        <button class="module-action-btn">Continue</button>
-                    </div>
-                    <div class="module-progress">
-                        <span class="progress-text">Not Started</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="module-card">
-                    <div class="module-image">
-                        <img src="/placeholder.svg?height=120&width=200" alt="Partikel Penyusun Benda dan Perubahannya">
-                        <button class="play-btn">
-                            <i class="fas fa-play"></i>
-                        </button>
-                    </div>
-                    <div class="module-content">
-                        <h3 class="module-title">Partikel Penyusun Benda dan Perubahannya</h3>
-                        <p class="module-subject">Science • 7th Grade</p>
-                        <button class="module-action-btn">Start</button>
-                    </div>
-                    <div class="module-progress">
-                        <span class="progress-text">Not Started</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="module-card">
-                    <div class="module-image">
-                        <img src="/placeholder.svg?height=120&width=200" alt="Ruang Lingkup Biologi">
-                        <button class="play-btn">
-                            <i class="fas fa-play"></i>
-                        </button>
-                    </div>
-                    <div class="module-content">
-                        <h3 class="module-title">Ruang Lingkup Biologi</h3>
-                        <p class="module-subject">Biology • 10th Grade</p>
-                        <button class="module-action-btn">Start</button>
-                    </div>
-                    <div class="module-progress">
-                        <span class="progress-text">Not Started</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="module-card">
-                    <div class="module-image">
-                        <img src="/placeholder.svg?height=120&width=200" alt="Piramida Ekologi dan Siklus Biokimia">
-                        <button class="play-btn">
-                            <i class="fas fa-play"></i>
-                        </button>
-                    </div>
-                    <div class="module-content">
-                        <h3 class="module-title">Piramida Ekologi dan Siklus Biokimia</h3>
-                        <p class="module-subject">Chemistry • 11th Grade</p>
-                        <button class="module-action-btn">Start</button>
-                    </div>
-                    <div class="module-progress">
-                        <span class="progress-text">Not Started</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </section>
     </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                alert('You need to be logged in to view this page.');
+                window.location.href = 'sign-in.html';
+                return;
+            }
+
+            // Fetch User Profile Data
+            async function fetchUserProfile() {
+                try {
+                    const response = await fetch('http://localhost:3000/api/users/profile', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`, // 
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        document.getElementById('welcome-username').textContent = data.username; // 
+                        document.getElementById('user-full-name').textContent = data.full_name; // 
+                        document.getElementById('user-level').textContent = `Level ${data.level}`; // 
+                        document.getElementById('user-xp').textContent = `${data.xp} XP`; // 
+                        document.getElementById('current-level-info').textContent = `Level ${data.level}`; // 
+
+                        // Placeholder for next unlock info - this typically requires backend logic
+                        // If your backend provides xpForNextLevel, use it. Otherwise, estimate.
+                        // Assuming each level requires increasing XP, you could have a client-side lookup table.
+                        const nextLevelXP = (data.level + 1) * 100; // Example calculation
+                        document.getElementById('next-unlock-info').textContent = `Next Level at ${nextLevelXP} XP`; 
+
+                    } else {
+                        console.error('Failed to fetch user profile:', data.message);
+                        if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
+                            alert('Session expired. Please log in again.');
+                            localStorage.removeItem('jwtToken');
+                            window.location.href = 'sign-in.html';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching user profile:', error);
+                }
+            }
+
+            // Fetch Daily Missions
+            async function fetchDailyMissions() {
+                try {
+                    const response = await fetch('http://localhost:3000/api/missions/daily', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`, // 
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const missions = await response.json();
+                    if (response.ok) {
+                        const missionsList = document.getElementById('daily-missions-list');
+                        missionsList.innerHTML = ''; // Clear previous missions
+                        let completedMissionsCount = 0;
+
+                        missions.forEach(mission => {
+                            const missionCard = document.createElement('div');
+                            missionCard.classList.add('mission-card');
+                            if (mission.is_completed) { // 
+                                missionCard.classList.add('completed'); // Add a class for styling completed missions
+                                completedMissionsCount++;
+                            }
+
+                            missionCard.innerHTML = `
+                                <div class="mission-icon">
+                                    <i class="${getMissionIcon(mission.type)}"></i>
+                                </div>
+                                <div class="mission-info">
+                                    <h3 class="mission-title">${mission.title}</h3>
+                                    <p class="mission-desc">${mission.description}</p>
+                                    <p class="mission-time">Time limit: Today (23:50)</p> <p class="mission-reward">Reward: ${mission.xp_reward} XP</p>
+                                </div>
+                                <button class="mission-btn ${mission.is_completed ? 'completed' : 'primary'}">
+                                    ${mission.is_completed ? 'Completed' : 'Start'}
+                                </button>
+                            `;
+                            missionsList.appendChild(missionCard);
+                        });
+
+                        // Update progress indicator
+                        const progressIndicator = document.getElementById('daily-mission-progress');
+                        progressIndicator.innerHTML = ''; // Clear existing indicators
+                        const totalDailyMissions = missions.length;
+                        for (let i = 0; i < totalDailyMissions; i++) {
+                            const step = document.createElement('div');
+                            step.classList.add('progress-step');
+                            if (i < completedMissionsCount) {
+                                step.classList.add('completed');
+                                step.innerHTML = '<i class="fas fa-check"></i>';
+                            } else {
+                                step.textContent = String(i + 1).padStart(2, '0');
+                            }
+                            progressIndicator.appendChild(step);
+                            if (i < totalDailyMissions - 1) {
+                                const line = document.createElement('div');
+                                line.classList.add('progress-line');
+                                if (i < completedMissionsCount - 1) {
+                                    line.classList.add('completed');
+                                }
+                                progressIndicator.appendChild(line);
+                            }
+                        }
+
+                    } else {
+                        console.error('Failed to fetch daily missions:', missions.message);
+                    }
+                } catch (error) {
+                    console.error('Error fetching daily missions:', error);
+                }
+            }
+
+            function getMissionIcon(missionType) {
+                switch (missionType) {
+                    case 'watch_video':
+                        return 'fas fa-play-circle';
+                    case 'complete_quiz':
+                        return 'fas fa-check-circle';
+                    case 'daily_login': // Assuming you have a daily login type
+                        return 'fas fa-sign-in-alt';
+                    default:
+                        return 'fas fa-tasks';
+                }
+            }
+
+            // Fetch Recommended Modules
+            async function fetchRecommendedModules() {
+                try {
+                    const response = await fetch('http://localhost:3000/api/modules/recommendations', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`, // 
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const modules = await response.json();
+                    if (response.ok) {
+                        const modulesGrid = document.getElementById('recommended-modules-grid');
+                        modulesGrid.innerHTML = ''; // Clear previous modules
+
+                        modules.forEach(module => {
+                            const moduleCard = document.createElement('div');
+                            moduleCard.classList.add('module-card');
+                            moduleCard.innerHTML = `
+                                <div class="module-image">
+                                    <img src="/placeholder.svg?height=120&width=200" alt="${module.title}">
+                                    <button class="play-btn">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                </div>
+                                <div class="module-content">
+                                    <h3 class="module-title">${module.title}</h3>
+                                    <p class="module-subject">${module.topic} • ${module.class_level} Grade</p>
+                                    <button class="module-action-btn" onclick="window.location.href='detail-module.html?moduleId=${module.id}'">
+                                        Continue
+                                    </button>
+                                </div>
+                                <div class="module-progress">
+                                    <span class="progress-text">Not Started</span> <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            `;
+                            modulesGrid.appendChild(moduleCard);
+                        });
+                    } else {
+                        console.error('Failed to fetch recommended modules:', modules.message);
+                    }
+                } catch (error) {
+                    console.error('Error fetching recommended modules:', error);
+                }
+            }
+
+            // Initial data load
+            fetchUserProfile();
+            fetchDailyMissions();
+            fetchRecommendedModules();
+        });
+    </script>
 </body>
 </html>
