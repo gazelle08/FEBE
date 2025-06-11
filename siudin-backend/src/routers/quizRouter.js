@@ -6,5 +6,5 @@ const { verifyToken } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 router.get('/:moduleId', verifyToken, quizController.getQuizzesByModuleId);
-router.post('/submit', verifyToken, quizController.submitQuiz);
+// router.post('/submit', verifyToken, quizController.submitQuiz);
 module.exports = router;

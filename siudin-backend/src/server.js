@@ -8,29 +8,32 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const db = require('./config/database');
-const passport = require('passport'); 
-require('./config/passport-setup'); 
+const passport = require('passport');
+require('./config/passport-setup');
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(passport.initialize()); 
+app.use(passport.initialize());
 
 // Import Routes
 const authRouter = require('./routers/authRouter');
 const userRouter = require('./routers/userRouter');
 const moduleRouter = require('./routers/moduleRouter');
-const quizRouter = require('./routers/quizRouter'); 
-const missionRouter = require('./routers/missionRouter'); 
-const leaderboardRouter = require('./routers/leaderboardRouter'); 
+const quizRouter = require('./routers/quizRouter');
+const missionRouter = require('./routers/missionRouter');
+const leaderboardRouter = require('./routers/leaderboardRouter');
+const quizController = require('./controllers/quizController');
+const { verifyToken } = require('./middleware/authMiddleware');
 
 
 // Route Middleware
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/modules', moduleRouter);
-app.use('/api/quizzes/module', quizRouter);
+app.use('/api/quizzes/module', quizRouter); 
+app.post('/api/quizzes/submit', verifyToken, quizController.submitQuiz);
 app.use('/api/missions', missionRouter);
 app.use('/api/leaderboard', leaderboardRouter);
 
@@ -45,5 +48,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

@@ -171,6 +171,12 @@ const logVideoWatch = async (req, res) => {
       [userId, moduleId]
     );
 
+    await connection.execute(
+      'INSERT INTO user_progress (user_id, module_id, is_completed, completed_at) VALUES (?, ?, TRUE, CURRENT_TIMESTAMP) ' +
+      'ON DUPLICATE KEY UPDATE is_completed = TRUE, completed_at = CURRENT_TIMESTAMP',
+      [userId, moduleId]
+    );
+
     const [watchVideoMissions] = await connection.execute(
       `SELECT id, required_completion_count FROM missions WHERE type = 'watch_video'`
     );
@@ -205,7 +211,7 @@ const logVideoWatch = async (req, res) => {
     }
 
     await connection.commit(); 
-    res.status(200).json({ message: 'Video watch logged successfully.' });
+    res.status(200).json({ message: 'Video watch logged successfully and module marked as completed.' });
   } catch (error) {
     if (connection) {
       await connection.rollback(); 
