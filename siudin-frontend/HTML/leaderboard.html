@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - SiUdin</title>
+    <link rel="stylesheet" href="../CSS/leaderboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-brand">
+                <div class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <span class="brand-name">SiUdin</span>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link">
+                        Fitur <i class="fas fa-chevron-down"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link active">Dashboard</a>
+                </li>
+            </ul>
+            
+            <div class="nav-actions">
+                <button class="notification-btn">
+                    <i class="fas fa-bell"></i>
+                </button>
+                <div class="user-avatar">
+                    <img src="../Asset/avatar-dashboard.png" alt="User Avatar">
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <h1 class="page-title">Leaderboard</h1>
+            
+            <section class="leaderboard-section">
+                <div class="top-three-illustration">
+                    <div class="character character-2">
+                        <div class="crown crown-silver">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="avatar avatar-2"></div>
+                    </div>
+                    <div class="character character-1">
+                        <div class="crown crown-gold">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="avatar avatar-1"></div>
+                    </div>
+                    <div class="character character-3">
+                        <div class="crown crown-bronze">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="avatar avatar-3"></div>
+                    </div>
+                </div>
+
+                <div class="leaderboard-card">
+                    <div class="leaderboard-item rank-1">
+                        <div class="rank-info">
+                            <div class="user-avatar-small">
+                                <div class="crown-small">
+                                    <i class="fas fa-crown"></i>
+                                </div>
+                                <div class="avatar-small avatar-1-small"></div>
+                            </div>
+                            <span class="username">Siti Lestari</span>
+                        </div>
+                        <span class="score">980</span>
+                    </div>
+                    
+                    <div class="leaderboard-item rank-2">
+                        <div class="rank-info">
+                            <div class="user-avatar-small">
+                                <div class="crown-small">
+                                    <i class="fas fa-crown"></i>
+                                </div>
+                                <div class="avatar-small avatar-2-small"></div>
+                            </div>
+                            <span class="username">Brian</span>
+                        </div>
+                        <span class="score">780</span>
+                    </div>
+                    
+                    <div class="leaderboard-item rank-3">
+                        <div class="rank-info">
+                            <div class="user-avatar-small">
+                                <div class="crown-small">
+                                    <i class="fas fa-crown"></i>
+                                </div>
+                                <div class="avatar-small avatar-3-small"></div>
+                            </div>
+                            <span class="username">Shandy Aulia</span>
+                        </div>
+                        <span class="score">620</span>
+                    </div>
+                    
+                    <div class="leaderboard-item rank-4">
+                        <div class="rank-info">
+                            <div class="user-avatar-small">
+                                <div class="avatar-small avatar-4-small"></div>
+                            </div>
+                            <span class="username">Annisa Besuri</span>
+                        </div>
+                        <span class="score">615</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="home.html" class="btn btn-secondary">Back to Home</a>
+                    <a href="dashboard.html" class="btn btn-primary">View My Stats</a>
+                </div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

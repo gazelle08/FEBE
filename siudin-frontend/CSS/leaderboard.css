@@ -1,0 +1,545 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header Styles */
+.header {
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    border: 2px solid #333;
+    border-radius: 20px;
+    margin: 10px auto;
+    background: white;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.brand-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+    align-items: center;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #666;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: #4ecdc4;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.notification-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #333;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.3s ease;
+}
+
+.notification-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid #4ecdc4;
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Main Content */
+.main-content {
+    padding: 2rem 0;
+    min-height: calc(100vh - 100px);
+}
+
+.page-title {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #4ecdc4;
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.leaderboard-section {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Top Three Illustration */
+.top-three-illustration {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 2rem;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.character {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.character-1 {
+    order: 2;
+    transform: translateY(-20px);
+}
+
+.character-2 {
+    order: 1;
+}
+
+.character-3 {
+    order: 3;
+}
+
+.crown {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 2;
+}
+
+.crown-gold {
+    color: #ffd700;
+}
+
+.crown-silver {
+    color: #c0c0c0;
+}
+
+.crown-bronze {
+    color: #cd7f32;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    position: relative;
+}
+
+.avatar-1 {
+    background: linear-gradient(135deg, #ff9a56, #ff6b35);
+}
+
+.avatar-2 {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.avatar-3 {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+}
+
+/* Leaderboard Card */
+.leaderboard-card {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+    border-radius: 25px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.leaderboard-item:last-child {
+    margin-bottom: 0;
+}
+
+.rank-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar-small {
+    position: relative;
+    width: 50px;
+    height: 50px;
+}
+
+.crown-small {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1rem;
+    color: #ffd700;
+    z-index: 2;
+}
+
+.avatar-small {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.avatar-1-small {
+    background: linear-gradient(135deg, #ff9a56, #ff6b35);
+}
+
+.avatar-2-small {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.avatar-3-small {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+}
+
+.avatar-4-small {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+}
+
+.username {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: white;
+}
+
+.score {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.btn {
+    padding: 1rem 2rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #a8518a, #8e44ad);
+    color: white;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(168, 81, 138, 0.4);
+}
+
+/* Responsive Design */
+
+/* Tablet Styles */
+@media screen and (max-width: 1024px) {
+    .navbar {
+        padding: 1rem;
+        margin: 5px auto;
+    }
+    
+    .nav-menu {
+        gap: 1.5rem;
+    }
+    
+    .page-title {
+        font-size: 2.5rem;
+    }
+    
+    .top-three-illustration {
+        gap: 1.5rem;
+    }
+    
+    .avatar {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .crown {
+        font-size: 1.8rem;
+    }
+}
+
+/* Mobile Styles */
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .navbar {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 15px;
+    }
+    
+    .nav-menu {
+        flex-direction: row;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .nav-actions {
+        order: -1;
+        align-self: flex-end;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .top-three-illustration {
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .avatar {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .crown {
+        font-size: 1.5rem;
+    }
+    
+    .leaderboard-card {
+        padding: 1.5rem;
+        border-radius: 20px;
+    }
+    
+    .leaderboard-item {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .username {
+        font-size: 1rem;
+    }
+    
+    .score {
+        font-size: 1.2rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 200px;
+        padding: 0.8rem 1.5rem;
+    }
+}
+
+/* Small Mobile Styles */
+@media screen and (max-width: 480px) {
+    .navbar {
+        padding: 0.8rem;
+    }
+    
+    .brand-name {
+        font-size: 1.2rem;
+    }
+    
+    .logo {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .nav-menu {
+        font-size: 0.9rem;
+    }
+    
+    .page-title {
+        font-size: 1.8rem;
+    }
+    
+    .top-three-illustration {
+        gap: 0.5rem;
+    }
+    
+    .avatar {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .crown {
+        font-size: 1.2rem;
+    }
+    
+    .leaderboard-card {
+        padding: 1rem;
+    }
+    
+    .leaderboard-item {
+        padding: 0.8rem;
+    }
+    
+    .avatar-small {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .crown-small {
+        font-size: 0.8rem;
+        top: -12px;
+    }
+    
+    .username {
+        font-size: 0.9rem;
+    }
+    
+    .score {
+        font-size: 1.1rem;
+    }
+    
+    .btn {
+        width: 180px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Large Desktop Styles */
+@media screen and (min-width: 1200px) {
+    .navbar {
+        padding: 1.2rem 2.5rem;
+    }
+    
+    .page-title {
+        font-size: 3.5rem;
+    }
+    
+    .top-three-illustration {
+        gap: 3rem;
+    }
+    
+    .avatar {
+        width: 90px;
+        height: 90px;
+    }
+    
+    .crown {
+        font-size: 2.2rem;
+    }
+    
+    .leaderboard-card {
+        padding: 2.5rem;
+    }
+    
+    .leaderboard-item {
+        padding: 2rem;
+    }
+    
+    .username {
+        font-size: 1.3rem;
+    }
+    
+    .score {
+        font-size: 1.6rem;
+    }
+}
