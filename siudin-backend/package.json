@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "import-ml-dataset": "node src/scripts/importMlDataset.js",
     "reset-monthly-xp": "node src/scripts/resetMonthlyXp.js",
-    "import-mission-dataset": "node src/scripts/importMissionDataset.js"
+    "import-mission-dataset": "node src/scripts/importMissionDataset.js",
+     "assign-daily-missions": "node src/scripts/assignDailyMissions.js"
   },
   "keywords": [
     "nodejs",
