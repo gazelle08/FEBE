@@ -610,15 +610,14 @@ body {
 /* Mobile Styles */
 @media (max-width: 768px) {
     .menu-toggle {
-    display: block; /* Hidden by default */
+    display: block;
     }
 
     .nav-menu {
         flex-direction: column;
         width: 100%;
-        background: w
+        background: white;
         margin: 10px 0 0 0;
-        gap: 0;
     }
     
     .nav-menu.active {
