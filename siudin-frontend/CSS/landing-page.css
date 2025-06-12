@@ -87,6 +87,10 @@ body {
     }
 }
 
+.menu-toggle {
+    display: none; 
+}
+
 .nav-menu {
     display: flex;
     list-style: none;
@@ -115,12 +119,10 @@ body {
     color: #397bdf;
 }
 
-/* Dropdown Container */
 .dropdown {
     position: relative;
 }
 
-/* Dropdown Menu */
 .dropdown-menu {
     position: absolute;
     top: 100%;
@@ -161,7 +163,6 @@ body {
     color: #2196F3;
 }
 
-/* Dropdown Arrow Animation */
 .nav-link .fa-chevron-down {
     margin-left: 5px;
     font-size: 12px;
@@ -360,7 +361,6 @@ body {
     color: #333;
 }
 
-/* Features Section */
 .features {
     padding: 80px 0;
     background: white;
@@ -402,7 +402,6 @@ body {
     font-size: 14px;
 }
 
-/* Statistics Section */
 .statistics {
     padding: 80px 0;
     background: linear-gradient(135deg, #e3f2fd, #bbdefb);
@@ -564,13 +563,20 @@ body {
 }
 
 /* Responsive Design */
-
-/* Tablet Styles */
 @media (max-width: 1024px) {
     .container {
         padding: 0 15px;
     }
     
+    .nav-container {
+        padding: 15px 0px;
+        width: 90%;
+    }
+
+    .menu-toggle {
+        display: none;
+    }
+
     .hero-title {
         font-size: 36px;
     }
@@ -603,22 +609,61 @@ body {
 
 /* Mobile Styles */
 @media (max-width: 768px) {
-    .header {
-        margin: 10px;
+    .menu-toggle {
+    display: block; /* Hidden by default */
     }
-    
-    .nav-container {
-        padding: 10px 20px;
-    }
-    
+
     .nav-menu {
+        flex-direction: column;
+        width: 100%;
+        background: w
+        margin: 10px 0 0 0;
+        gap: 0;
+    }
+    
+    .nav-menu.active {
+        display: flex; /* Show when active */
+    }
+    
+    .nav-menu li {
+        width: 100%;
+    }
+    
+    .nav-link {
+        display: block;
+        padding: 12px 0;
+        width: 100%;
+    }
+
+    .nav-link.active {
+        background-color: transparent
+    }
+
+    .dropdown-menu {
+        position: static;
         display: none;
+        width: 100%;
+        padding-left: 15px;
+        background: rgba(0,0,0,0.02); 
+    }
+    
+    .dropdown:hover .dropdown-menu,
+    .dropdown:focus-within .dropdown-menu {
+        display: block;
+    }
+    
+    .logo {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
     }
     
     .logo-text {
         font-size: 20px;
     }
-    
+
+
     .hero-title {
         font-size: 28px;
         margin-bottom: 30px;
@@ -681,6 +726,11 @@ body {
         grid-template-columns: 1fr;
         gap: 30px;
         text-align: center;
+    }
+
+    .social-links{
+        display: flex;
+        justify-content: center;
     }
 }
 
