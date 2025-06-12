@@ -7,8 +7,8 @@ class ModelLoader {
   constructor() {
     this.model = null;
     this.modelPath = path.resolve(__dirname, './model.json');
-    this.isLoading = false; 
-    this.loadPromise = null; 
+    this.isLoading = false;
+    this.loadPromise = null;
   }
 
   async load() {
@@ -18,7 +18,7 @@ class ModelLoader {
     }
     if (this.isLoading) {
       console.log('Model is already loading, awaiting existing promise.');
-      return this.loadPromise; 
+      return this.loadPromise;
     }
 
     this.isLoading = true;
@@ -26,21 +26,21 @@ class ModelLoader {
       try {
         console.log('Loading model from:', this.modelPath);
         this.model = await tf.loadGraphModel(`file://${this.modelPath}`);
-        
+
         const warmupInput = tf.tensor2d([Array(preprocessor.maxLength).fill(0)], [1, preprocessor.maxLength], 'float32');
         await this.model.predict(warmupInput).data();
         tf.dispose(warmupInput);
-        
+
         console.log('Model loaded successfully');
         this.isLoading = false;
-        this.loadPromise = null; 
+        this.loadPromise = null;
         return true;
       } catch (err) {
         console.error('Failed to load model:', err);
-        this.model = null; 
+        this.model = null;
         this.isLoading = false;
-        this.loadPromise = null; 
-        throw new Error('Failed to load ML model: ' + err.message); 
+        this.loadPromise = null;
+        throw new Error('Failed to load ML model: ' + err.message);
       }
     })();
     return this.loadPromise;
@@ -53,7 +53,7 @@ class ModelLoader {
         throw new Error('ML model is not loaded and could not be loaded.');
       }
     }
-    
+
     let inputTensor;
     let predictionTensor;
     try {

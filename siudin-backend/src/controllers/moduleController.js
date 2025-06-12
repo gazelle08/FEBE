@@ -1,5 +1,5 @@
 // src/controllers/moduleController.js
-const supabase = require('../config/database'); // Use Supabase client
+const supabase = require('../config/database');
 const tf = require('@tensorflow/tfjs');
 const ModelLoader = require('../ml/models/recommender/model_loader');
 const preprocessor = require('../ml/models/recommender/preprocessor');
@@ -28,7 +28,7 @@ const getRecommendedModules = async (req, res) => {
     const userId = req.user.id;
 
     // Fetch user's completed modules
-    const { data: userCompletedModules, error: completedModulesError } = await supabase
+    const { data: userCompletedModulesRaw, error: completedModulesError } = await supabase
       .from('user_progress')
       .select(`
         module_id,
@@ -41,9 +41,13 @@ const getRecommendedModules = async (req, res) => {
 
     if (completedModulesError) throw completedModulesError;
 
-    const formattedCompletedModules = userCompletedModules.map(up => up.modules);
+    // Format the fetched data to directly get module details
+    const formattedCompletedModules = userCompletedModulesRaw.map(up => up.modules);
 
     let recommendedModules = [];
+    // Declare completedIds in a broader scope, and ensure its elements are strings for robustness
+    let completedIds = new Set(formattedCompletedModules.map(m => String(m.id)));
+
 
     if (formattedCompletedModules.length > 0) {
       try {
@@ -60,8 +64,7 @@ const getRecommendedModules = async (req, res) => {
 
         if (allModulesError) throw allModulesError;
 
-        const completedIds = new Set(formattedCompletedModules.map(m => m.id));
-        const uncompletedModules = allModules.filter(m => !completedIds.has(m.id));
+        const uncompletedModules = allModules.filter(m => !completedIds.has(String(m.id))); // Filter using string IDs
 
         if (uncompletedModules.length > 0) {
           if (!ModelLoader.model && !ModelLoader.isLoading) {
@@ -117,19 +120,29 @@ const getRecommendedModules = async (req, res) => {
     if (recommendedModules.length === 0) {
       console.log('Using fallback recommendations');
 
-      let query = supabase
+      let queryBuilder = supabase
         .from('modules')
-        .select('id, title, description, video_url, difficulty, class_level, topic')
-        .not('id', 'in', Array.from(completedIds || [])); // Exclude already completed modules
+        .select('id, title, description, video_url, difficulty, class_level, topic');
+
+      const completedIdsArray = Array.from(completedIds); // Convert Set to Array
+
+      // Apply the 'not.in' filter only if there are completed IDs
+      if (completedIdsArray.length > 0) {
+          // Supabase's 'in' operator can take an array.
+          // The error "unexpected "1" expecting "(" is unusual, but directly passing the array should be correct.
+          // If the error persists, it might imply a very specific bug or version issue with Supabase client/PostgREST.
+          // Ensure the 'id' column in your 'modules' table is of a compatible type (e.g., INT or UUID).
+          queryBuilder = queryBuilder.not('id', 'in', completedIdsArray);
+      }
 
       if (formattedCompletedModules.length > 0) {
         const primaryTopic = formattedCompletedModules[0].topic;
-        query = query.eq('topic', primaryTopic).order('id', { ascending: false }).limit(5); // Order by id then limit
+        queryBuilder = queryBuilder.eq('topic', primaryTopic).order('id', { ascending: false }).limit(5);
       } else {
-        query = query.order('id', { ascending: false }).limit(5); // Just random for a general user
+        queryBuilder = queryBuilder.order('id', { ascending: false }).limit(5); // Default fallback if no completed modules
       }
 
-      const { data: fallbackModules, error: fallbackError } = await query;
+      const { data: fallbackModules, error: fallbackError } = await queryBuilder;
       if (fallbackError) throw fallbackError;
       recommendedModules = fallbackModules;
     }
@@ -143,7 +156,6 @@ const getRecommendedModules = async (req, res) => {
 
 const getAllModules = async (req, res) => {
   try {
-    // Fetch all modules
     const { data: modules, error } = await supabase
       .from('modules')
       .select('*');
@@ -161,7 +173,6 @@ const getAllModules = async (req, res) => {
 
 const getModuleById = async (req, res) => {
   try {
-    // Fetch module by ID
     const { data: module, error } = await supabase
       .from('modules')
       .select('*')
