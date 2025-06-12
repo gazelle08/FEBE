@@ -10,41 +10,39 @@
 </head>
 <body>
     <header class="header">
-        <nav class="navbar">
-            <div class="nav-brand">
-                <div class="logo">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <span class="brand-name">SiUdin</span>
+        <nav class="nav-container">
+            <div class="logo">
+                <div class="logo-icon"><img src="../Asset/Logo.png" alt=""></div>
+                <h1 class="welcome-title">Si<span>Udin</span></h1>    
+            </div>              
+            <div class="menu-toggle">
+                <i class="fas fa-bars"></i>
             </div>
-            
             <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="home.html" class="nav-link">Home</a>
+                <li><a href="../HTML/home.html" class="nav-link">Home</a></li>
+                <li class="dropdown">
+                    <a href="#" class="nav-link">Fitur<i class="fas fa-chevron-down"></i></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="../HTML/modul.html" class="dropdown-item">Module</a></li>
+                        <li><a href="../HTML/missions.html" class="dropdown-item">Mission</a></li>
+                        <li><a href="../HTML/leaderboard.html" class="dropdown-item">Leaderboard</a></li>
+                    </ul>
                 </li>
-                <li class="nav-item dropdown">
-                    <a href="#" class="nav-link">
-                        Fitur <i class="fas fa-chevron-down"></i>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="dashboard.html" class="nav-link active">Dashboard</a>
-                </li>
+                <li><a href="../HTML/dashboard.html" class="nav-link active">Dashboard</a></li>
             </ul>
-            
             <div class="nav-actions">
                 <button class="notification-btn">
                     <i class="fas fa-bell"></i>
                 </button>
-                <div class="user-avatar">
-                    <img src="../Asset/avatar-dashboard.png" alt="User Avatar">
+                <div class="user-profile">
+                    <a href="../HTML/dashboard.html"><img src="../Asset/avatar-dashboard.png" alt="User Profile" class="profile-img"></a>
                 </div>
             </div>
         </nav>
     </header>
 
     <main class="main-content">
-        <div class="container">
+        <div class="container-profile">
             <h1 class="page-title">Profile Settings</h1>
             
             <form class="profile-form">
@@ -109,7 +107,46 @@
         </div>
     </main>
 
-    <script>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 class="footer-brand">Si<span>Udin</span></h4>
+                    <p>Contact Us</p>
+                    <p>support@siudin.com</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Menu</h4>
+                    <ul>
+                        <li><a href="../HTML/home.html">Home</a></li>
+                        <li><a href="#">Fitur</a></li>
+                        <li><a href="#">Insights</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Help</h4>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#"><img src="../Asset/face book.png" alt=""></a>
+                        <a href="#"><img src="../Asset/twitter.png" alt=""></a>
+                        <a href="#"><img src="../Asset/instagram.png" alt=""></a>
+                        <a href="#"><img src="../Asset/youtub.png" alt=""></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 SiUdin. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- <script>
         document.addEventListener('DOMContentLoaded', async function() {
             const token = localStorage.getItem('jwtToken');
             if (!token) {
@@ -242,6 +279,8 @@
                 document.getElementById('dropdownArrow').classList.remove('rotate');
             }
         });
-    </script>
+    </script> -->
+    <script src="../JavaScript/navbar-scroll.js"></script>
+    <script src="../JavaScript/mobile-toggle.js"></script>
 </body>
 </html>
