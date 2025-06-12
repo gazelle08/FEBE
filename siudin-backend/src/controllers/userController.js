@@ -1,5 +1,5 @@
 // src/controllers/userController.js
-const supabase = require('../config/database'); // Use Supabase client
+const supabase = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 const calculateAge = (dateOfBirth) => {
@@ -161,7 +161,11 @@ const logVideoWatch = async (req, res) => {
   const { moduleId } = req.body;
   const userId = req.user.id;
 
+  // Log awal permintaan
+  console.log(`[logVideoWatch] Diterima permintaan untuk User ID: ${userId}, Module ID: ${moduleId}`);
+
   if (!moduleId) {
+    console.log('[logVideoWatch] Module ID tidak ada.');
     return res.status(400).json({ message: 'Module ID is required.' });
   }
 
@@ -204,13 +208,13 @@ const logVideoWatch = async (req, res) => {
       .from('users')
       .update({ xp: totalXpAfterWatch, level: calculatedLevel, xp_this_month: totalXpThisMonthAfterWatch })
       .eq('id', userId);
-    if (updateUserXpError) throw updateUserXpError;
+    if (updateUserXpError) console.error('Error updating user XP:', updateUserXpError);
     console.log(`User ${userId} gained ${videoWatchXp} XP for watching video ${moduleId}. Total XP: ${totalXpAfterWatch}`);
 
     // Update general 'watch_video' missions
     const { data: watchVideoMissions, error: missionsError } = await supabase
       .from('missions')
-      .select('id, required_completion_count')
+      .select('id, required_completion_count, xp_reward') // Sertakan xp_reward untuk logging
       .eq('type', 'watch_video');
     if (missionsError) console.error('Error fetching watch_video missions:', missionsError);
 
@@ -230,6 +234,8 @@ const logVideoWatch = async (req, res) => {
         if (!missionWasCompleted) { // Only update if not already completed
             const newProgress = currentMissionProgress + 1;
             const isMissionNowCompleted = newProgress >= mission.required_completion_count;
+
+            console.log(`[logVideoWatch] Memperbarui misi umum ID ${mission.id}: Progres baru ${newProgress}/${mission.required_completion_count}, Selesai: ${isMissionNowCompleted}`); // Log untuk misi umum
 
             const { error: updateUmError } = await supabase
               .from('user_missions')
@@ -262,32 +268,47 @@ const logVideoWatch = async (req, res) => {
                 if (updateUserXpGeneralMissionError) console.error('Error updating user XP after general mission award:', updateUserXpGeneralMissionError);
                 console.log(`User ${userId} gained ${mission.xp_reward} XP for completing general video mission ${mission.id}. Total XP: ${totalXpAfterMissionAward}`);
             }
+        } else {
+            console.log(`[logVideoWatch] Misi umum ID ${mission.id} sudah selesai, tidak ada pembaruan progres.`); // Log untuk misi umum yang sudah selesai
         }
       }
     }
 
-    // Update daily 'watch_video' missions
     const today = new Date().toISOString().slice(0, 10);
-    const { data: dailyWatchVideoMissions, error: dailyMissionsError } = await supabase
+    const { data: dailyWatchVideoMissionsRaw, error: dailyMissionsError } = await supabase
       .from('daily_missions')
       .select(`
         id,
-        xp_reward,
-        required_completion_count,
+        mission_id,
         current_progress,
-        is_completed
-      `, { foreignTable: 'missions'}) // Select relevant fields from missions table
+        is_completed,
+        missions(xp_reward, required_completion_count, type) // Ambil data missions melalui join
+      `)
       .eq('user_id', userId)
-      .eq('assigned_date', today)
-      .eq('missions.type', 'watch_video'); // Filter by mission type
+      .eq('assigned_date', today);
 
-    if (dailyMissionsError) console.error('Error fetching daily watch_video missions:', dailyMissionsError);
+    if (dailyMissionsError) {
+        console.error('Error fetching daily watch_video missions:', dailyMissionsError);
+        throw dailyMissionsError; 
+    }
 
-    if (dailyWatchVideoMissions && dailyWatchVideoMissions.length > 0) {
-      for (const dm of dailyWatchVideoMissions) {
-        if (!dm.is_completed) { // Only update if not already completed
+    // Filter misi harian yang relevan di sisi Node.js setelah data diambil
+    const relevantDailyMissions = dailyWatchVideoMissionsRaw.filter(dm => 
+        dm.missions && dm.missions.type === 'watch_video'
+    );
+    console.log(`[logVideoWatch] Misi harian relevan (tipe 'watch_video') yang ditemukan untuk diperbarui: ${relevantDailyMissions.length}`);
+
+    if (relevantDailyMissions && relevantDailyMissions.length > 0) {
+      for (const dm of relevantDailyMissions) {
+        const xp_reward = dm.missions.xp_reward;
+        const required_completion_count = dm.missions.required_completion_count;
+
+        if (!dm.is_completed) {
             const newDailyProgress = dm.current_progress + 1;
-            const isDailyMissionCompleted = newDailyProgress >= dm.required_completion_count;
+            const isDailyMissionCompleted = newDailyProgress >= required_completion_count;
+
+            console.log(`[logVideoWatch] Memperbarui misi harian ID ${dm.id}: Progres baru ${newDailyProgress}/${required_completion_count}, Selesai: ${isDailyMissionCompleted}`); // Log untuk misi harian
+
             const { error: updateDmError } = await supabase
               .from('daily_missions')
               .update({
@@ -295,12 +316,11 @@ const logVideoWatch = async (req, res) => {
                 is_completed: isDailyMissionCompleted,
                 completed_at: isDailyMissionCompleted ? new Date().toISOString() : null
               })
-              .eq('id', dm.id); // Update specific daily mission entry by its ID
+              .eq('id', dm.id); 
             if (updateDmError) console.error('Error updating daily mission progress:', updateDmError);
 
 
-            if (isDailyMissionCompleted && dm.xp_reward > 0) {
-                // Award XP for daily mission
+            if (isDailyMissionCompleted && xp_reward > 0) {
                 const { data: userAfterDailyMissionRows, error: userAfterDailyMissionError } = await supabase
                   .from('users')
                   .select('xp, level, xp_this_month')
@@ -309,8 +329,8 @@ const logVideoWatch = async (req, res) => {
                 if (userAfterDailyMissionError) throw userAfterDailyMissionError;
                 const userAfterDailyMission = userAfterDailyMissionRows[0];
 
-                let totalXpAfterAll = userAfterDailyMission.xp + dm.xp_reward;
-                let totalXpThisMonthAfterAll = userAfterDailyMission.xp_this_month + dm.xp_reward;
+                let totalXpAfterAll = userAfterDailyMission.xp + xp_reward;
+                let totalXpThisMonthAfterAll = userAfterDailyMission.xp_this_month + xp_reward;
                 let finalCalculatedLevel = Math.floor(totalXpAfterAll / 100) + 1;
 
                 const { error: updateUserXpDailyMissionError } = await supabase
@@ -318,13 +338,16 @@ const logVideoWatch = async (req, res) => {
                   .update({ xp: totalXpAfterAll, level: finalCalculatedLevel, xp_this_month: totalXpThisMonthAfterAll })
                   .eq('id', userId);
                 if (updateUserXpDailyMissionError) console.error('Error updating user XP after daily mission award:', updateUserXpDailyMissionError);
-                console.log(`User ${userId} gained ${dm.xp_reward} XP for completing daily video mission ${dm.id}. Total XP: ${totalXpAfterAll}`);
+                console.log(`User ${userId} gained ${xp_reward} XP for completing daily video mission ${dm.id}. Total XP: ${totalXpAfterAll}`);
             }
+        } else {
+            console.log(`[logVideoWatch] Misi harian ID ${dm.id} sudah selesai, tidak ada pembaruan progres.`); 
         }
       }
+    } else {
+        console.log(`[logVideoWatch] Tidak ada misi harian 'watch_video' yang relevan untuk diperbarui untuk user ${userId} hari ini.`); 
     }
 
-    // Refetch final user status after all potential XP updates
     const { data: finalUserRows, error: finalUserError } = await supabase.from('users').select('xp, level, xp_this_month').eq('id', userId).limit(1);
     if (finalUserError) throw finalUserError;
     const finalUser = finalUserRows[0];
