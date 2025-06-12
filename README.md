@@ -11,9 +11,6 @@ The development follows a client-server architecture. The frontend is built usin
 
 ### Frontend
 - HTML5, CSS3, JavaScript
-- React.js or Vue.js
-- Axios
-- Tailwind CSS
 
 ### Backend
 - Express.js
@@ -21,6 +18,7 @@ The development follows a client-server architecture. The frontend is built usin
 - MySQL Workbench
 - MySQL
 - JWT (JSON Web Token)
+- supabase
 
 ### Supporting Tools
 - Git & GitHub
