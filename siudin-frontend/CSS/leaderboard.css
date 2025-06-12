@@ -355,22 +355,40 @@ body {
     height: 50px;
     border-radius: 50%;
     border: 2px solid white;
+    background-size: cover;       /* Pastikan gambar menutupi area */
+    background-position: center;  /* Pusatkan gambar */
+    background-repeat: no-repeat; /* Hindari pengulangan */
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Variasi dengan gradient (opsional) */
 .avatar-1-small {
-    background: linear-gradient(135deg, #ff9a56, #ff6b35);
+    background: 
+        url('../Asset/avatar-dashboard.png') center/cover no-repeat,
+        linear-gradient(135deg, #ff9a56, #ff6b35);
+    background-blend-mode: overlay;
 }
 
 .avatar-2-small {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: 
+        url('../Asset/avatar-dashboard.png') center/cover no-repeat,
+        linear-gradient(135deg, #667eea, #764ba2);
+    background-blend-mode: overlay;
 }
 
 .avatar-3-small {
-    background: linear-gradient(135deg, #f093fb, #f5576c);
+    background: 
+        url('../Asset/avatar-dashboard.png') center/cover no-repeat,
+        linear-gradient(135deg, #f093fb, #f5576c);
+    background-blend-mode: overlay;
 }
 
 .avatar-4-small {
-    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+    background: 
+        url('../Asset/avatar-dashboard.png') center/cover no-repeat,
+        linear-gradient(135deg, #4ecdc4, #44a08d);
+    background-blend-mode: overlay;
 }
 
 .username {
