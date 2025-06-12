@@ -12,6 +12,12 @@ body {
     background-color: #f8fafb;
 }
 
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
 /* Header Styles */
 .header {
   background: none;
@@ -172,6 +178,12 @@ body {
     gap: 1rem;
 }
 
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .notification-btn {
     background: none;
     border: none;
@@ -214,12 +226,6 @@ body {
     display: flex;
     align-items: center;
     gap: 1.5rem;
-}
-
-.welcome-title {
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
 }
 
 .user-info {
@@ -288,7 +294,7 @@ body {
 
 /* Search Section */
 .search-section {
-    margin-bottom: 3rem;
+    margin: 4rem 0;
     text-align: center;
 }
 
@@ -584,7 +590,7 @@ body {
     content: '';
     position: absolute;
     bottom: -10px;
-    left: 50%;
+    left: 65%;
     transform: translateX(-50%);
     width: 100px;
     height: 3px;
@@ -771,12 +777,18 @@ body {
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-    .navbar {
-        padding: 1rem;
+    .nav-container {
+        padding: 15px 0px;
+        width: 90%;
     }
+
+    .menu-toggle {
+        display: none;
+    }
+
     
     .main-content {
-        padding: 1.5rem;
+        padding: 5rem;
     }
     
     .welcome-card {
@@ -803,6 +815,10 @@ body {
     .mission-info {
         text-align: center;
     }
+
+    .footer-content {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 /* Mobile Styles */
@@ -813,12 +829,64 @@ body {
         padding: 1rem;
     }
     
-    .nav-menu {
-        gap: 1rem;
+     .nav-container {
+        position: relative;
+        padding: 15px;
     }
     
+    .logo {
+        flex: 1;
+    }
+    
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 105%;
+        left: 67%;
+        width: 30%;
+        gap: 0;
+        background-color: #fff;
+        flex-direction: column;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        border-radius: 20px;
+        z-index: 1000;
+    }
+    
+    .nav-menu.active {
+        display: flex;
+    }
+    
+    .nav-link {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .dropdown-menu {
+        box-shadow: none;
+    }
+    
+    .menu-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        order: 2;
+        margin-left: 15px;
+    }
+    
+    .dropdown > a::after {
+        display: none;
+    }
+    
+    .logo-text {
+        font-size: 20px;
+    }
+
+    
     .main-content {
-        padding: 1rem;
+        padding: 7rem;
     }
     
     .welcome-title {
@@ -854,6 +922,17 @@ body {
     
     .xp-progress {
         font-size: 2rem;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        text-align: center;
+    }
+
+    .social-links{
+        display: flex;
+        justify-content: center;
     }
 }
 
@@ -905,10 +984,17 @@ body {
     .modules-title {
         font-size: 1.75rem;
     }
+
+    .footer {
+        padding: 40px 0 20px;
+    }
 }
 
 /* Large Desktop Styles */
 @media (min-width: 1440px) {
+    .container {
+        max-width: 1400px;
+    }
     .main-content {
         max-width: 1400px;
     }
