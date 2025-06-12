@@ -173,10 +173,9 @@
                                 missionCard.classList.add('uncompleted');
                                 missionCard.innerHTML = missionContent + `
                                     <button class="claim-btn" data-mission-id="${mission.mission_id}" data-is-daily="true" ${mission.current_progress >= mission.required_completion_count ? '' : 'disabled'}>
-                                        Claim XP
                                     </button>
                                 `;
-                                uncompletedList.appendChild(missionItem);
+                                uncompletedList.appendChild(missionCard);
                             }
                         });
 
