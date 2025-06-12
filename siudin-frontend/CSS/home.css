@@ -778,7 +778,7 @@ body {
 /* Responsive Design */
 @media (max-width: 1024px) {
     .nav-container {
-        padding: 15px 0px;
+        padding: 15px 30px;
         width: 90%;
     }
 
@@ -786,7 +786,6 @@ body {
         display: none;
     }
 
-    
     .main-content {
         padding: 5rem;
     }
@@ -829,7 +828,7 @@ body {
         padding: 1rem;
     }
     
-     .nav-container {
+    .nav-container {
         position: relative;
         padding: 15px;
     }
@@ -883,8 +882,7 @@ body {
     .logo-text {
         font-size: 20px;
     }
-
-    
+ 
     .main-content {
         padding: 7rem;
     }
