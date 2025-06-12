@@ -3,7 +3,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const AppleStrategy = require('passport-apple').Strategy;
-const db = require('./database');
+const supabase = require('./database');
 const jwt = require('jsonwebtoken');
 
 passport.serializeUser((user, done) => {
@@ -12,7 +12,8 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
     try {
-        const [users] = await db.execute('SELECT id, username, email FROM users WHERE id = ?', [id]);
+        const { data: users, error } = await supabase.from('users').select('id, username, email').eq('id', id).limit(1);
+        if (error) throw error;
         done(null, users[0]);
     } catch (err) {
         done(err, null);
@@ -25,51 +26,53 @@ passport.use(new GoogleStrategy({
     callbackURL: process.env.GOOGLE_CALLBACK_URL
   },
   async (accessToken, refreshToken, profile, done) => {
-    let connection;
     try {
-        connection = await db.getConnection();
-        const [existingUsers] = await connection.execute('SELECT id, username, email FROM users WHERE google_id = ?', [profile.id]);
+        let { data: existingUsers, error: existingUsersError } = await supabase.from('users').select('id, username, email').eq('google_id', profile.id).limit(1);
+        if (existingUsersError) throw existingUsersError;
 
-        if (existingUsers.length > 0) {
+        if (existingUsers && existingUsers.length > 0) {
             const user = existingUsers[0];
             const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
             return done(null, { id: user.id, username: user.username, token: token });
         } else {
-            const [existingEmailUsers] = await connection.execute('SELECT id, username, email FROM users WHERE email = ?', [profile.emails[0].value]);
-            if (existingEmailUsers.length > 0) {
-                const user = existingEmailUsers[0];
-                await connection.execute('UPDATE users SET google_id = ? WHERE id = ?', [profile.id, user.id]);
-                const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
-                return done(null, { id: user.id, username: user.username, token: token });
+            const userEmail = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
+            if (userEmail) {
+                let { data: existingEmailUsers, error: existingEmailUsersError } = await supabase.from('users').select('id, username, email').eq('email', userEmail).limit(1);
+                if (existingEmailUsersError) throw existingEmailUsersError;
+
+                if (existingEmailUsers && existingEmailUsers.length > 0) {
+                    const user = existingEmailUsers[0];
+                    const { error: updateError } = await supabase.from('users').update({ google_id: profile.id }).eq('id', user.id);
+                    if (updateError) throw updateError;
+                    const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+                    return done(null, { id: user.id, username: user.username, token: token });
+                }
             }
 
             const newUser = {
                 username: profile.displayName.toLowerCase().replace(/\s/g, ''),
                 full_name: profile.displayName,
-                email: profile.emails[0].value,
+                email: userEmail,
                 google_id: profile.id,
                 education_level: 'Unknown',
                 gender: 'Unknown',
-                password: null
+                password: null, // No password for OAuth users
+                date_of_birth: null // Add default value as date_of_birth is required in register
             };
-            const [result] = await connection.execute(
-                'INSERT INTO users (username, full_name, email, google_id, date_of_birth, education_level, gender, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [newUser.username, newUser.full_name, newUser.email, newUser.google_id, newUser.date_of_birth, newUser.education_level, newUser.gender, newUser.password]
-            );
-            const createdUser = { id: result.insertId, username: newUser.username };
+            const { data: createdUserArr, error: createError } = await supabase.from('users').insert(newUser).select('id, username');
+            if (createError) throw createError;
+
+            const createdUser = createdUserArr[0];
             const token = jwt.sign({ id: createdUser.id, username: createdUser.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
             return done(null, { ...createdUser, token: token });
         }
     } catch (err) {
         console.error('Error during Google OAuth:', err);
         return done(err, null);
-    } finally {
-        if (connection) connection.release();
     }
   }
 ));
 
-// Facebook Strategy
 passport.use(new FacebookStrategy({
     clientID: process.env.FACEBOOK_APP_ID,
     clientSecret: process.env.FACEBOOK_APP_SECRET,
@@ -77,22 +80,24 @@ passport.use(new FacebookStrategy({
     profileFields: ['id', 'displayName', 'emails']
   },
   async (accessToken, refreshToken, profile, done) => {
-    let connection;
     try {
-        connection = await db.getConnection();
-        const [existingUsers] = await connection.execute('SELECT id, username, email FROM users WHERE facebook_id = ?', [profile.id]);
+        let { data: existingUsers, error: existingUsersError } = await supabase.from('users').select('id, username, email').eq('facebook_id', profile.id).limit(1);
+        if (existingUsersError) throw existingUsersError;
 
-        if (existingUsers.length > 0) {
+        if (existingUsers && existingUsers.length > 0) {
             const user = existingUsers[0];
             const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
             return done(null, { id: user.id, username: user.username, token: token });
         } else {
             const userEmail = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
             if (userEmail) {
-                const [existingEmailUsers] = await connection.execute('SELECT id, username, email FROM users WHERE email = ?', [userEmail]);
-                if (existingEmailUsers.length > 0) {
+                let { data: existingEmailUsers, error: existingEmailUsersError } = await supabase.from('users').select('id, username, email').eq('email', userEmail).limit(1);
+                if (existingEmailUsersError) throw existingEmailUsersError;
+
+                if (existingEmailUsers && existingEmailUsers.length > 0) {
                     const user = existingEmailUsers[0];
-                    await connection.execute('UPDATE users SET facebook_id = ? WHERE id = ?', [profile.id, user.id]);
+                    const { error: updateError } = await supabase.from('users').update({ facebook_id: profile.id }).eq('id', user.id);
+                    if (updateError) throw updateError;
                     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
                     return done(null, { id: user.id, username: user.username, token: token });
                 }
@@ -108,19 +113,16 @@ passport.use(new FacebookStrategy({
                 gender: 'Unknown',
                 password: null
             };
-            const [result] = await connection.execute(
-                'INSERT INTO users (username, full_name, email, facebook_id, date_of_birth, education_level, gender, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [newUser.username, newUser.full_name, newUser.email, newUser.facebook_id, newUser.date_of_birth, newUser.education_level, newUser.gender, newUser.password]
-            );
-            const createdUser = { id: result.insertId, username: newUser.username };
+            const { data: createdUserArr, error: createError } = await supabase.from('users').insert(newUser).select('id, username');
+            if (createError) throw createError;
+
+            const createdUser = createdUserArr[0];
             const token = jwt.sign({ id: createdUser.id, username: createdUser.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
             return done(null, { ...createdUser, token: token });
         }
     } catch (err) {
         console.error('Error during Facebook OAuth:', err);
         return done(err, null);
-    } finally {
-        if (connection) connection.release();
     }
   }
 ));
@@ -131,28 +133,30 @@ passport.use(new AppleStrategy({
     keyID: process.env.APPLE_KEY_ID,
     privateKeyPath: process.env.APPLE_PRIVATE_KEY_PATH,
     callbackURL: process.env.APPLE_CALLBACK_URL,
-    passReqToCallback: true 
+    passReqToCallback: true
   },
   async (req, accessToken, refreshToken, profile, done) => {
-    let connection;
     try {
-        connection = await db.getConnection();
         const appleId = profile.id;
         const userEmail = profile.email || (profile.emails && profile.emails[0] ? profile.emails[0].value : null);
         const fullName = profile.name ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim() : 'Apple User';
 
-        const [existingUsers] = await connection.execute('SELECT id, username, email FROM users WHERE apple_id = ?', [appleId]);
+        let { data: existingUsers, error: existingUsersError } = await supabase.from('users').select('id, username, email').eq('apple_id', appleId).limit(1);
+        if (existingUsersError) throw existingUsersError;
 
-        if (existingUsers.length > 0) {
+        if (existingUsers && existingUsers.length > 0) {
             const user = existingUsers[0];
             const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
             return done(null, { id: user.id, username: user.username, token: token });
         } else {
             if (userEmail) {
-                const [existingEmailUsers] = await connection.execute('SELECT id, username, email FROM users WHERE email = ?', [userEmail]);
-                if (existingEmailUsers.length > 0) {
+                let { data: existingEmailUsers, error: existingEmailUsersError } = await supabase.from('users').select('id, username, email').eq('email', userEmail).limit(1);
+                if (existingEmailUsersError) throw existingEmailUsersError;
+
+                if (existingEmailUsers && existingEmailUsers.length > 0) {
                     const user = existingEmailUsers[0];
-                    await connection.execute('UPDATE users SET apple_id = ? WHERE id = ?', [appleId, user.id]);
+                    const { error: updateError } = await supabase.from('users').update({ apple_id: appleId }).eq('id', user.id);
+                    if (updateError) throw updateError;
                     const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
                     return done(null, { id: user.id, username: user.username, token: token });
                 }
@@ -168,19 +172,16 @@ passport.use(new AppleStrategy({
                 gender: 'Unknown',
                 password: null
             };
-            const [result] = await connection.execute(
-                'INSERT INTO users (username, full_name, email, apple_id, date_of_birth, education_level, gender, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [newUser.username, newUser.full_name, newUser.email, newUser.apple_id, newUser.date_of_birth, newUser.education_level, newUser.gender, newUser.password]
-            );
-            const createdUser = { id: result.insertId, username: newUser.username };
+            const { data: createdUserArr, error: createError } = await supabase.from('users').insert(newUser).select('id, username');
+            if (createError) throw createError;
+
+            const createdUser = createdUserArr[0];
             const token = jwt.sign({ id: createdUser.id, username: createdUser.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
             return done(null, { ...createdUser, token: token });
         }
     } catch (err) {
         console.error('Error during Apple OAuth:', err);
         return done(err, null);
-    } finally {
-        if (connection) connection.release();
     }
   }
 ));

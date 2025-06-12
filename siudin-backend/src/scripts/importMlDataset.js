@@ -2,23 +2,20 @@
 const fs = require('fs');
 const { parse } = require('csv-parse');
 const path = require('path');
-const db = require('../config/database');
+const supabase = require('../config/database'); 
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const csvFilePath = path.resolve(__dirname, 'Dataset SIUDIN - Final.csv');
 
 async function importMlDataset() {
   console.log(`Starting import from: ${csvFilePath}`);
-  let connection;
-  try {
-    connection = await db.getConnection();
-    console.log('Database connection tested successfully.');
 
+  try {
     const records = [];
     const parser = fs
       .createReadStream(csvFilePath)
       .pipe(parse({
-        columns: true, 
+        columns: true,
         skip_empty_lines: true,
         trim: true
       }));
@@ -34,20 +31,19 @@ async function importMlDataset() {
       process.exit(0);
     }
 
-    await connection.beginTransaction();
-    console.log('Transaction started.');
+    let importedModulesCount = 0;
+    let importedQuizzesCount = 0;
 
-    let importedCount = 0;
     for (const record of records) {
       const jenjang = record['Jenjang'];
       const mataPelajaran = record['Mata Pelajaran'];
       const materi = record['Materi'];
       const subMateri = record['Sub Materi'];
       const link = record['Link'];
-      
+
       const combinedQuestionAndAnswerText = record['Pertanyaan'] || null;
       let actualQuestionsText = null;
-      let rawAnswerKeysText = null; 
+      let rawAnswerKeysText = null;
 
       if (combinedQuestionAndAnswerText) {
           const parts = combinedQuestionAndAnswerText.split('Kunci Jawaban:');
@@ -75,126 +71,115 @@ async function importMlDataset() {
         difficulty = 'Unknown';
       }
 
-      const mlFeatures = null; 
+      const mlFeatures = null;
 
-      const moduleInsertQuery = `
-        INSERT INTO modules (title, description, video_url, difficulty, class_level, topic, ml_features, questions_text, answer_key_text)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-          description = VALUES(description),
-          video_url = VALUES(video_url),
-          difficulty = VALUES(difficulty),
-          class_level = VALUES(class_level),
-          topic = VALUES(topic),
-          ml_features = VALUES(ml_features),
-          questions_text = VALUES(questions_text),
-          answer_key_text = VALUES(answer_key_text);
-      `;
-      const [moduleResult] = await connection.execute(moduleInsertQuery, [
-        title,
-        description,
-        videoUrl,
-        difficulty,
-        classLevel,
-        topic,
-        mlFeatures ? JSON.stringify(mlFeatures) : null,
-        actualQuestionsText, 
-        rawAnswerKeysText 
-      ]);
+      const { data: moduleData, error: moduleError } = await supabase
+        .from('modules')
+        .upsert({
+          title: title,
+          description: description,
+          video_url: videoUrl,
+          difficulty: difficulty,
+          class_level: classLevel,
+          topic: topic,
+          ml_features: mlFeatures ? JSON.stringify(mlFeatures) : null,
+          questions_text: actualQuestionsText,
+          answer_key_text: rawAnswerKeysText
+        }, { onConflict: 'title' }) 
+        .select('id'); 
 
-      let moduleId = moduleResult.insertId;
-      if (moduleResult.affectedRows === 0 && moduleResult.warningStatus === 0) {
-          const [existingModule] = await connection.execute('SELECT id FROM modules WHERE title = ?', [title]);
-          if (existingModule.length > 0) {
-              moduleId = existingModule[0].id;
-          } else {
-              console.warn(`Could not retrieve module_id for module: ${title}. Skipping quiz import for this module.`);
-              continue;
-          }
+      if (moduleError) {
+        console.warn(`Warning: Could not upsert module: ${title}. Error: ${moduleError.message}`);
+        continue;
       }
 
+      const moduleId = moduleData && moduleData.length > 0 ? moduleData[0].id : null;
 
+      if (!moduleId) {
+          console.warn(`Could not retrieve module_id for module: ${title}. Skipping quiz import for this module.`);
+          continue;
+      }
+      importedModulesCount++;
+
+
+      // Insert quizzes if available
       if (actualQuestionsText && rawAnswerKeysText) {
         try {
           const questionsArray = actualQuestionsText.split(/\n\s*(?=\d+\.\s*)/).filter(q => q.trim() !== '');
-          
-          const answerKeyLetters = rawAnswerKeysText.split('\n').map(a => {
-            const match = a.trim().match(/^[a-d]/i); 
-            return match ? match[0].toLowerCase() : null;
-          }).filter(Boolean); 
 
+          const answerKeyLetters = rawAnswerKeysText.split('\n').map(a => {
+            const match = a.trim().match(/^[a-d]/i);
+            return match ? match[0].toLowerCase() : null;
+          }).filter(Boolean);
+
+          const quizzesToInsert = [];
           for (let i = 0; i < questionsArray.length; i++) {
             const fullQuestionText = questionsArray[i].trim();
-            
+
             let currentOptions = [];
-            let questionOnly = fullQuestionText;
-            
             const optionsRegex = /[a-d]\.\s*([^\n]+)/g;
             let match;
 
             const tempQuestionWithOptions = fullQuestionText;
-            const localOptionsRegex = new RegExp(optionsRegex); 
+            const localOptionsRegex = new RegExp(optionsRegex);
             while ((match = localOptionsRegex.exec(tempQuestionWithOptions)) !== null) {
-                currentOptions.push(match[1].trim()); 
+                currentOptions.push(match[1].trim());
             }
 
-            questionOnly = fullQuestionText.replace(optionsRegex, '').replace(/^\d+\.\s*/, '').trim();
+            const questionOnly = fullQuestionText.replace(optionsRegex, '').replace(/^\d+\.\s*/, '').trim();
 
             let correctAnswerText = null;
             const correctLetter = answerKeyLetters[i];
             if (correctLetter) {
                 const optionIndex = correctLetter.charCodeAt(0) - 'a'.charCodeAt(0);
                 if (optionIndex >= 0 && optionIndex < currentOptions.length) {
-                    correctAnswerText = currentOptions[optionIndex]; 
+                    correctAnswerText = currentOptions[optionIndex];
                 }
             }
-            
-            const quizXpReward = 10; 
 
-            const quizInsertQuery = `
-              INSERT INTO quizzes (module_id, question, options, correct_answer, xp_reward)
-              VALUES (?, ?, ?, ?, ?)
-              ON DUPLICATE KEY UPDATE
-                question = VALUES(question),
-                options = VALUES(options),
-                correct_answer = VALUES(correct_answer),
-                xp_reward = VALUES(xp_reward);
-            `;
+            const quizXpReward = 10;
 
-            await connection.execute(quizInsertQuery, [
-              moduleId, 
-              questionOnly,
-              JSON.stringify(currentOptions), 
-              correctAnswerText,
-              quizXpReward
-            ]);
-            console.log(`    Successfully inserted quiz ${i + 1} for module ID ${moduleId} (${title})`);
+            quizzesToInsert.push({
+              module_id: moduleId,
+              question: questionOnly,
+              options: JSON.stringify(currentOptions), 
+              correct_answer: correctAnswerText,
+              xp_reward: quizXpReward
+            });
           }
+
+          const { data: quizInsertData, error: quizInsertError } = await supabase
+            .from('quizzes')
+            .insert(quizzesToInsert);
+
+          if (quizInsertError) {
+            console.warn(`Warning: Could not insert quizzes for module: ${title}. Error: ${quizInsertError.message}`);
+          } else {
+            importedQuizzesCount += quizzesToInsert.length;
+            console.log(`    Successfully inserted ${quizzesToInsert.length} quizzes for module ID ${moduleId} (${title})`);
+          }
+
         } catch (parseError) {
           console.warn(`Warning: Could not parse quizzes for module: ${title}. Error: ${parseError.message}`);
         }
       }
-      importedCount++;
     }
 
-    await connection.commit();
-    console.log('Verifying data count after commit...');
-    const [moduleCountRows] = await connection.execute('SELECT COUNT(*) AS count FROM modules;');
-    const moduleCount = moduleCountRows[0].count;
-    const [quizCountRows] = await connection.execute('SELECT COUNT(*) AS count FROM quizzes;');
-    const quizCount = quizCountRows[0].count;
+    console.log(`Successfully imported ${importedModulesCount} modules.`);
+    console.log(`Successfully imported ${importedQuizzesCount} quizzes.`);
+
+    const { count: moduleCount, error: moduleCountError } = await supabase.from('modules').select('*', { count: 'exact' });
+    const { count: quizCount, error: quizCountError } = await supabase.from('quizzes').select('*', { count: 'exact' });
+
+    if (moduleCountError) console.error('Error fetching modules count:', moduleCountError);
+    if (quizCountError) console.error('Error fetching quizzes count:', quizCountError);
+
     console.log(`Current modules count: ${moduleCount}`);
     console.log(`Current quizzes count: ${quizCount}`);
-    console.log(`Successfully imported ${importedCount} records into modules and quizzes tables.`);
+
   } catch (error) {
-    if (connection) {
-      await connection.rollback();
-    }
     console.error('Error importing ML dataset:', error);
   } finally {
-    if (connection) {
-      connection.release();
-    }
     process.exit(0);
   }
 }

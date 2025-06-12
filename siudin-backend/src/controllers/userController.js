@@ -1,6 +1,6 @@
 // src/controllers/userController.js
-const db = require('../config/database');
-const bcrypt = require('bcryptjs'); 
+const supabase = require('../config/database'); // Use Supabase client
+const bcrypt = require('bcryptjs');
 
 const calculateAge = (dateOfBirth) => {
   const dob = new Date(dateOfBirth);
@@ -10,146 +10,150 @@ const calculateAge = (dateOfBirth) => {
 };
 
 const getUserProfile = async (req, res) => {
-  let connection;
   try {
-    connection = await db.getConnection();
     const userId = req.user.id;
 
-    const [users] = await connection.execute('SELECT id, username, full_name, email, xp, level, created_at, date_of_birth, education_level, gender FROM users WHERE id = ?', [userId]);
-    const user = users[0];
+    // Fetch user profile
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, username, full_name, email, xp, level, created_at, date_of_birth, education_level, gender')
+      .eq('id', userId)
+      .limit(1);
+
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return res.status(500).json({ message: 'Server error fetching user profile.' });
+    }
+
+    const user = users && users.length > 0 ? users[0] : null;
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' }); 
+      return res.status(404).json({ message: 'User not found.' });
     }
 
     res.status(200).json(user);
   } catch (error) {
     console.error('Error fetching user profile:', error);
-    res.status(500).json({ message: 'Server error fetching user profile.' }); 
-  } finally {
-    if (connection) {
-      connection.release();
-    }
+    res.status(500).json({ message: 'Server error fetching user profile.' });
   }
 };
 
 const updateUserProfile = async (req, res) => {
-  let connection;
   try {
-    connection = await db.getConnection();
     const userId = req.user.id;
     const { username, email, full_name, date_of_birth, education_level, gender } = req.body;
 
-    const fieldsToUpdate = [];
-    const params = [];
+    const updates = {};
     let age;
 
     if (username) {
-        fieldsToUpdate.push('username = ?');
-        params.push(username);
+        updates.username = username;
     }
     if (email) {
-        fieldsToUpdate.push('email = ?');
-        params.push(email);
+        updates.email = email;
     }
     if (full_name) {
-        fieldsToUpdate.push('full_name = ?');
-        params.push(full_name);
+        updates.full_name = full_name;
     }
     if (date_of_birth) {
-        fieldsToUpdate.push('date_of_birth = ?');
-        params.push(date_of_birth);
+        updates.date_of_birth = date_of_birth;
         age = calculateAge(date_of_birth);
-        fieldsToUpdate.push('age = ?');
-        params.push(age);
+        updates.age = age;
     }
     if (education_level) {
-        fieldsToUpdate.push('education_level = ?');
-        params.push(education_level);
+        updates.education_level = education_level;
     }
     if (gender) {
-        fieldsToUpdate.push('gender = ?');
-        params.push(gender);
+        updates.gender = gender;
     }
 
-    if (fieldsToUpdate.length === 0) {
-      return res.status(400).json({ message: 'No valid fields provided for update.' }); 
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'No valid fields provided for update.' });
     }
 
+    // Check for existing username or email by another user
     if (username || email) {
-      const [existingUsers] = await connection.execute(
-        'SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?',
-        [username || null, email || null, userId]
-      );
-      if (existingUsers.length > 0) {
-        return res.status(409).json({ message: 'Username or email already taken by another user.' }); 
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .or(`username.eq.${username},email.eq.${email}`)
+        .not('id', 'eq', userId);
+
+      if (checkError) throw checkError;
+
+      if (existingUsers && existingUsers.length > 0) {
+        return res.status(409).json({ message: 'Username or email already taken by another user.' });
       }
     }
 
-    params.push(userId);
+    // Update user profile
+    const { error: updateError, count } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', userId)
+      .select('id', { count: 'exact' }); // Request count of affected rows
 
-    const query = `UPDATE users SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
+    if (updateError) throw updateError;
 
-    const [result] = await connection.execute(query, params);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'User not found or no changes made.' }); 
+    if (count === 0) {
+      return res.status(404).json({ message: 'User not found or no changes made.' });
     }
 
-    res.status(200).json({ message: 'Profile updated successfully.' }); 
+    res.status(200).json({ message: 'Profile updated successfully.' });
   } catch (error) {
     console.error('Error updating user profile:', error);
     res.status(500).json({ message: 'Server error updating user profile.' });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
 
 const changePassword = async (req, res) => {
-  let connection;
   try {
-    connection = await db.getConnection();
     const userId = req.user.id;
     const { oldPassword, newPassword } = req.body;
 
     if (!oldPassword || !newPassword) {
-      return res.status(400).json({ message: 'Old password and new password are required.' }); 
+      return res.status(400).json({ message: 'Old password and new password are required.' });
     }
 
-    const [userRows] = await connection.execute('SELECT password FROM users WHERE id = ?', [userId]);
+    // Fetch user's current password hash
+    const { data: userRows, error: fetchError } = await supabase
+      .from('users')
+      .select('password')
+      .eq('id', userId)
+      .limit(1);
+
+    if (fetchError) throw fetchError;
     const user = userRows[0];
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' }); 
+      return res.status(404).json({ message: 'User not found.' });
     }
 
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Old password is incorrect.' }); 
+      return res.status(401).json({ message: 'Old password is incorrect.' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    const [result] = await connection.execute(
-      'UPDATE users SET password = ? WHERE id = ?',
-      [hashedPassword, userId]
-    );
+    // Update user's password
+    const { error: updateError, count } = await supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('id', userId)
+      .select('id', { count: 'exact' });
 
-    if (result.affectedRows === 0) {
+    if (updateError) throw updateError;
+
+    if (count === 0) {
       return res.status(500).json({ message: 'Failed to update password.' });
     }
 
-    res.status(200).json({ message: 'Password updated successfully.' }); 
+    res.status(200).json({ message: 'Password updated successfully.' });
   } catch (error) {
     console.error('Error changing password:', error);
     res.status(500).json({ message: 'Server error changing password.' });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
 
@@ -158,28 +162,35 @@ const logVideoWatch = async (req, res) => {
   const userId = req.user.id;
 
   if (!moduleId) {
-    return res.status(400).json({ message: 'Module ID is required.' }); 
+    return res.status(400).json({ message: 'Module ID is required.' });
   }
 
-  let connection;
   try {
-    connection = await db.getConnection();
-    await connection.beginTransaction(); 
+    // Insert video watch record
+    const { error: watchInsertError } = await supabase
+      .from('user_video_watches')
+      .insert({ user_id: userId, module_id: moduleId });
+    if (watchInsertError) console.error('Error inserting video watch record:', watchInsertError);
 
-    await connection.execute(
-      'INSERT INTO user_video_watches (user_id, module_id) VALUES (?, ?)',
-      [userId, moduleId]
-    );
 
-    await connection.execute(
-      'INSERT INTO user_progress (user_id, module_id, is_completed, completed_at) VALUES (?, ?, TRUE, CURRENT_TIMESTAMP) ' +
-      'ON DUPLICATE KEY UPDATE is_completed = TRUE, completed_at = CURRENT_TIMESTAMP',
-      [userId, moduleId]
-    );
+    // Upsert user progress for the module
+    const { error: progressUpsertError } = await supabase
+      .from('user_progress')
+      .upsert({ user_id: userId, module_id: moduleId, is_completed: true, completed_at: new Date().toISOString() }, { onConflict: 'user_id,module_id' });
+    if (progressUpsertError) console.error('Error upserting user progress:', progressUpsertError);
+
 
     const videoWatchXp = 10;
-    const [userRows] = await connection.execute('SELECT xp, level, xp_this_month FROM users WHERE id = ? FOR UPDATE', [userId]);
+    // Fetch user's current XP and level for update
+    const { data: userRows, error: userFetchError } = await supabase
+      .from('users')
+      .select('xp, level, xp_this_month')
+      .eq('id', userId)
+      .limit(1);
+
+    if (userFetchError) throw userFetchError;
     const user = userRows[0];
+
     let currentXp = user.xp;
     let currentLevel = user.level;
     let currentXpThisMonth = user.xp_this_month || 0;
@@ -188,128 +199,206 @@ const logVideoWatch = async (req, res) => {
     let totalXpThisMonthAfterWatch = currentXpThisMonth + videoWatchXp;
     let calculatedLevel = Math.floor(totalXpAfterWatch / 100) + 1;
 
-    await connection.execute(
-      'UPDATE users SET xp = ?, level = ?, xp_this_month = ? WHERE id = ?',
-      [totalXpAfterWatch, calculatedLevel, totalXpThisMonthAfterWatch, userId]
-    );
+    // Update user's XP and level
+    const { error: updateUserXpError } = await supabase
+      .from('users')
+      .update({ xp: totalXpAfterWatch, level: calculatedLevel, xp_this_month: totalXpThisMonthAfterWatch })
+      .eq('id', userId);
+    if (updateUserXpError) throw updateUserXpError;
     console.log(`User ${userId} gained ${videoWatchXp} XP for watching video ${moduleId}. Total XP: ${totalXpAfterWatch}`);
 
-    const [watchVideoMissions] = await connection.execute(
-      `SELECT id, required_completion_count FROM missions WHERE type = 'watch_video'`
-    );
-    if (watchVideoMissions.length > 0) {
+    // Update general 'watch_video' missions
+    const { data: watchVideoMissions, error: missionsError } = await supabase
+      .from('missions')
+      .select('id, required_completion_count')
+      .eq('type', 'watch_video');
+    if (missionsError) console.error('Error fetching watch_video missions:', missionsError);
+
+    if (watchVideoMissions && watchVideoMissions.length > 0) {
       for (const mission of watchVideoMissions) {
-        await connection.execute(
-          'INSERT INTO user_missions (user_id, mission_id, current_progress, is_completed) VALUES (?, ?, 1, FALSE) ' +
-          'ON DUPLICATE KEY UPDATE current_progress = current_progress + 1, is_completed = IF(current_progress + 1 >= ?, TRUE, FALSE)',
-          [userId, mission.id, mission.required_completion_count]
-        );
-      }
-    }
+        const { data: userMissionProgress, error: umpError } = await supabase
+          .from('user_missions')
+          .select('current_progress, is_completed')
+          .eq('user_id', userId)
+          .eq('mission_id', mission.id)
+          .limit(1);
+        if (umpError) console.error('Error fetching user mission progress:', umpError);
 
-    const today = new Date().toISOString().slice(0, 10);
-    const [dailyWatchVideoMissions] = await connection.execute(
-      `SELECT m.id, m.xp_reward, m.required_completion_count, dm.current_progress, dm.is_completed
-       FROM daily_missions dm
-       JOIN missions m ON dm.mission_id = m.id
-       WHERE dm.user_id = ? AND dm.assigned_date = ? AND m.type = 'watch_video'`,
-      [userId, today]
-    );
+        let currentMissionProgress = userMissionProgress && userMissionProgress.length > 0 ? userMissionProgress[0].current_progress : 0;
+        let missionWasCompleted = userMissionProgress && userMissionProgress.length > 0 ? userMissionProgress[0].is_completed : false;
 
-    if (dailyWatchVideoMissions.length > 0) {
-      for (const mission of dailyWatchVideoMissions) {
-        if (!mission.is_completed) { 
-            const newDailyProgress = mission.current_progress + 1;
-            const isDailyMissionCompleted = newDailyProgress >= mission.required_completion_count;
-            await connection.execute(
-              'UPDATE daily_missions SET current_progress = ?, is_completed = ?, completed_at = ? WHERE user_id = ? AND mission_id = ? AND assigned_date = ?',
-              [newDailyProgress, isDailyMissionCompleted, isDailyMissionCompleted ? new Date() : null, userId, mission.id, today]
-            );
+        if (!missionWasCompleted) { // Only update if not already completed
+            const newProgress = currentMissionProgress + 1;
+            const isMissionNowCompleted = newProgress >= mission.required_completion_count;
 
-            if (isDailyMissionCompleted && mission.xp_reward > 0) {
-                const [userAfterDailyMissionRows] = await connection.execute('SELECT xp, level, xp_this_month FROM users WHERE id = ? FOR UPDATE', [userId]);
-                const userAfterDailyMission = userAfterDailyMissionRows[0];
-                let currentXpAfterDaily = userAfterDailyMission.xp;
-                let currentLevelAfterDaily = userAfterDailyMission.level;
-                let currentXpThisMonthAfterDaily = userAfterDailyMission.xp_this_month || 0;
+            const { error: updateUmError } = await supabase
+              .from('user_missions')
+              .upsert({
+                user_id: userId,
+                mission_id: mission.id,
+                current_progress: newProgress,
+                is_completed: isMissionNowCompleted,
+                completed_at: isMissionNowCompleted ? new Date().toISOString() : null
+              }, { onConflict: 'user_id,mission_id' });
+            if (updateUmError) console.error('Error upserting user mission progress:', updateUmError);
 
-                let totalXpAfterAll = currentXpAfterDaily + mission.xp_reward;
-                let totalXpThisMonthAfterAll = currentXpThisMonthAfterDaily + mission.xp_reward;
-                let finalCalculatedLevel = Math.floor(totalXpAfterAll / 100) + 1;
+            if (isMissionNowCompleted && mission.xp_reward > 0) {
+                // Award XP for general mission
+                const { data: userAfterMissionRows, error: userAfterMissionError } = await supabase
+                  .from('users')
+                  .select('xp, level, xp_this_month')
+                  .eq('id', userId)
+                  .limit(1);
+                if (userAfterMissionError) throw userAfterMissionError;
+                const userAfterMission = userAfterMissionRows[0];
+                let totalXpAfterMissionAward = userAfterMission.xp + mission.xp_reward;
+                let totalXpThisMonthAfterMissionAward = userAfterMission.xp_this_month + mission.xp_reward;
+                let calculatedLevelAfterMissionAward = Math.floor(totalXpAfterMissionAward / 100) + 1;
 
-                await connection.execute('UPDATE users SET xp = ?, level = ?, xp_this_month = ? WHERE id = ?',
-                    [totalXpAfterAll, finalCalculatedLevel, totalXpThisMonthAfterAll, userId]);
-                console.log(`User ${userId} gained ${mission.xp_reward} XP for completing daily video mission ${mission.id}. Total XP: ${totalXpAfterAll}`);
+                const { error: updateUserXpGeneralMissionError } = await supabase
+                  .from('users')
+                  .update({ xp: totalXpAfterMissionAward, level: calculatedLevelAfterMissionAward, xp_this_month: totalXpThisMonthAfterMissionAward })
+                  .eq('id', userId);
+                if (updateUserXpGeneralMissionError) console.error('Error updating user XP after general mission award:', updateUserXpGeneralMissionError);
+                console.log(`User ${userId} gained ${mission.xp_reward} XP for completing general video mission ${mission.id}. Total XP: ${totalXpAfterMissionAward}`);
             }
         }
       }
     }
 
-    await connection.commit(); 
+    // Update daily 'watch_video' missions
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: dailyWatchVideoMissions, error: dailyMissionsError } = await supabase
+      .from('daily_missions')
+      .select(`
+        id,
+        xp_reward,
+        required_completion_count,
+        current_progress,
+        is_completed
+      `, { foreignTable: 'missions'}) // Select relevant fields from missions table
+      .eq('user_id', userId)
+      .eq('assigned_date', today)
+      .eq('missions.type', 'watch_video'); // Filter by mission type
+
+    if (dailyMissionsError) console.error('Error fetching daily watch_video missions:', dailyMissionsError);
+
+    if (dailyWatchVideoMissions && dailyWatchVideoMissions.length > 0) {
+      for (const dm of dailyWatchVideoMissions) {
+        if (!dm.is_completed) { // Only update if not already completed
+            const newDailyProgress = dm.current_progress + 1;
+            const isDailyMissionCompleted = newDailyProgress >= dm.required_completion_count;
+            const { error: updateDmError } = await supabase
+              .from('daily_missions')
+              .update({
+                current_progress: newDailyProgress,
+                is_completed: isDailyMissionCompleted,
+                completed_at: isDailyMissionCompleted ? new Date().toISOString() : null
+              })
+              .eq('id', dm.id); // Update specific daily mission entry by its ID
+            if (updateDmError) console.error('Error updating daily mission progress:', updateDmError);
+
+
+            if (isDailyMissionCompleted && dm.xp_reward > 0) {
+                // Award XP for daily mission
+                const { data: userAfterDailyMissionRows, error: userAfterDailyMissionError } = await supabase
+                  .from('users')
+                  .select('xp, level, xp_this_month')
+                  .eq('id', userId)
+                  .limit(1);
+                if (userAfterDailyMissionError) throw userAfterDailyMissionError;
+                const userAfterDailyMission = userAfterDailyMissionRows[0];
+
+                let totalXpAfterAll = userAfterDailyMission.xp + dm.xp_reward;
+                let totalXpThisMonthAfterAll = userAfterDailyMission.xp_this_month + dm.xp_reward;
+                let finalCalculatedLevel = Math.floor(totalXpAfterAll / 100) + 1;
+
+                const { error: updateUserXpDailyMissionError } = await supabase
+                  .from('users')
+                  .update({ xp: totalXpAfterAll, level: finalCalculatedLevel, xp_this_month: totalXpThisMonthAfterAll })
+                  .eq('id', userId);
+                if (updateUserXpDailyMissionError) console.error('Error updating user XP after daily mission award:', updateUserXpDailyMissionError);
+                console.log(`User ${userId} gained ${dm.xp_reward} XP for completing daily video mission ${dm.id}. Total XP: ${totalXpAfterAll}`);
+            }
+        }
+      }
+    }
+
+    // Refetch final user status after all potential XP updates
+    const { data: finalUserRows, error: finalUserError } = await supabase.from('users').select('xp, level, xp_this_month').eq('id', userId).limit(1);
+    if (finalUserError) throw finalUserError;
+    const finalUser = finalUserRows[0];
+
     res.status(200).json({
         message: 'Video watch logged successfully and module marked as completed.',
         user_status: {
-            xp: totalXpAfterWatch,
-            level: calculatedLevel,
-            xpThisMonth: totalXpThisMonthAfterWatch,
-            xpForNextLevel: (calculatedLevel * 100) - totalXpAfterWatch
+            xp: finalUser.xp,
+            level: finalUser.level,
+            xpThisMonth: finalUser.xp_this_month,
+            xpForNextLevel: (finalUser.level * 100) - finalUser.xp
         }
     });
   } catch (error) {
-    if (connection) {
-      await connection.rollback(); 
-    }
     console.error('Error logging video watch:', error);
-    res.status(500).json({ message: 'Server error logging video watch.' }); 
-  } finally {
-    if (connection) {
-      connection.release();
-    }
+    res.status(500).json({ message: 'Server error logging video watch.' });
   }
 };
 
 const getDashboardData = async (req, res) => {
-  let connection;
   try {
-    connection = await db.getConnection();
     const userId = req.user.id;
 
-    const [userRows] = await connection.execute('SELECT id, username, full_name, email, xp, level, education_level, xp_this_month FROM users WHERE id = ?', [userId]);
+    // Fetch user details
+    const { data: userRows, error: userError } = await supabase
+      .from('users')
+      .select('id, username, full_name, email, xp, level, education_level, xp_this_month')
+      .eq('id', userId)
+      .limit(1);
+
+    if (userError) throw userError;
     const user = userRows[0];
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' }); 
+      return res.status(404).json({ message: 'User not found.' });
     }
 
-    const [completedModulesResult] = await connection.execute(
-      'SELECT COUNT(DISTINCT module_id) AS total_completed_modules FROM user_progress WHERE user_id = ? AND is_completed = TRUE',
-      [userId]
-    );
-    const totalCompletedModules = completedModulesResult[0].total_completed_modules;
+    // Fetch total completed modules
+    const { count: totalCompletedModules, error: completedModulesError } = await supabase
+      .from('user_progress')
+      .select('module_id', { count: 'exact' })
+      .eq('user_id', userId)
+      .eq('is_completed', true);
+    if (completedModulesError) throw completedModulesError;
 
-    const [completedQuizzesResult] = await connection.execute(
-      'SELECT COUNT(DISTINCT quiz_id) AS total_quizzes_completed FROM user_quiz_attempts WHERE user_id = ? AND is_correct = TRUE',
-      [userId]
-    );
-    const totalQuizzesCompleted = completedQuizzesResult[0].total_quizzes_completed;
+    // Fetch total completed quizzes
+    const { count: totalQuizzesCompleted, error: completedQuizzesError } = await supabase
+      .from('user_quiz_attempts')
+      .select('quiz_id', { count: 'exact' })
+      .eq('user_id', userId)
+      .eq('is_correct', true);
+    if (completedQuizzesError) throw completedQuizzesError;
 
-    const [completedMissionsResult] = await connection.execute(
-      'SELECT COUNT(DISTINCT mission_id) AS total_completed_missions FROM user_missions WHERE user_id = ? AND is_completed = TRUE',
-      [userId]
-    );
-    const totalCompletedMissions = completedMissionsResult[0].total_completed_missions;
+    // Fetch total completed missions
+    const { count: totalCompletedMissions, error: completedMissionsError } = await supabase
+      .from('user_missions')
+      .select('mission_id', { count: 'exact' })
+      .eq('user_id', userId)
+      .eq('is_completed', true);
+    if (completedMissionsError) throw completedMissionsError;
 
-    const [totalVideosWatchedResult] = await connection.execute(
-      'SELECT COUNT(id) AS total_videos_watched FROM user_video_watches WHERE user_id = ?',
-      [userId]
-    );
-    const totalVideosWatched = totalVideosWatchedResult[0].total_videos_watched;
+    // Fetch total videos watched
+    const { count: totalVideosWatched, error: videosWatchedError } = await supabase
+      .from('user_video_watches')
+      .select('id', { count: 'exact' })
+      .eq('user_id', userId);
+    if (videosWatchedError) throw videosWatchedError;
+
 
     res.status(200).json({
       username: user.username,
       xp: user.xp,
       level: user.level,
-      education_level: user.education_level, 
+      education_level: user.education_level,
       xp_this_month: user.xp_this_month,
       total_modules_completed: totalCompletedModules,
       total_quizzes_completed: totalQuizzesCompleted,
@@ -319,10 +408,6 @@ const getDashboardData = async (req, res) => {
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     res.status(500).json({ message: 'Server error fetching dashboard data.' });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
 
