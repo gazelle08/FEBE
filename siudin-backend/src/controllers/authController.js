@@ -1,7 +1,7 @@
 // src/controllers/authController.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../config/database');
+const supabase = require('../config/database');
 
 const calculateAge = (dateOfBirth) => {
   const dob = new Date(dateOfBirth);
@@ -17,41 +17,47 @@ const register = async (req, res) => {
     return res.status(400).json({ message: 'All fields are required.' });
   }
 
-  const username = fullName.toLowerCase().replace(/\s/g, ''); 
+  const username = fullName.toLowerCase().replace(/\s/g, '');
 
   const age = calculateAge(dateOfBirth);
 
-  let connection;
   try {
-    connection = await db.getConnection();
-    await connection.beginTransaction();
+    // Check for existing username or email
+    let { data: existingUsers, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .or(`username.eq.${username},email.eq.${email}`);
 
-    const [existingUsers] = await connection.execute('SELECT id FROM users WHERE username = ? OR email = ?', [username, email]);
-    if (existingUsers.length > 0) {
-      await connection.rollback();
+    if (checkError) throw checkError;
+
+    if (existingUsers && existingUsers.length > 0) {
       return res.status(409).json({ message: 'Username or email already exists.' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const [result] = await connection.execute(
-      'INSERT INTO users (username, full_name, email, password, date_of_birth, education_level, gender, age) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [username, fullName, email, hashedPassword, dateOfBirth, educationLevel, gender, age]
-    );
+    // Insert new user
+    const { data: newUser, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        username: username,
+        full_name: fullName,
+        email: email,
+        password: hashedPassword,
+        date_of_birth: dateOfBirth,
+        education_level: educationLevel,
+        gender: gender,
+        age: age
+      })
+      .select('id'); // Select the ID of the newly inserted row
 
-    await connection.commit();
-    res.status(201).json({ message: 'User registered successfully.', userId: result.insertId });
+    if (insertError) throw insertError;
+
+    res.status(201).json({ message: 'User registered successfully.', userId: newUser[0].id });
   } catch (error) {
-    if (connection) {
-      await connection.rollback();
-    }
     console.error('Error during registration:', error);
     res.status(500).json({ message: 'Server error during registration.' });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
 
@@ -62,11 +68,17 @@ const login = async (req, res) => {
     return res.status(400).json({ message: 'Email and password are required.' });
   }
 
-  let connection;
   try {
-    connection = await db.getConnection();
-    const [users] = await connection.execute('SELECT id, username, full_name, email, password, date_of_birth, education_level, gender FROM users WHERE email = ?', [email]);
-    const user = users[0];
+    // Fetch user by email
+    let { data: users, error: fetchError } = await supabase
+      .from('users')
+      .select('id, username, full_name, email, password, date_of_birth, education_level, gender')
+      .eq('email', email)
+      .limit(1);
+
+    if (fetchError) throw fetchError;
+
+    const user = users && users.length > 0 ? users[0] : null;
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials.' });
@@ -99,10 +111,6 @@ const login = async (req, res) => {
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ message: 'Server error during login.' });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
 
