@@ -155,10 +155,12 @@
         </div>
     </footer>
 
-    <script>
+<script type="module">
+  import { supabase } from '../JavaScript/supabaseClient.js';
         document.addEventListener('DOMContentLoaded', async function() {
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
+            const { data: { user }, error: userSessionError } = await supabase.auth.getUser();
+
+            if (userSessionError || !user) {
                 alert('You need to be logged in to view this page.');
                 window.location.href = 'sign-in.html';
                 return;
@@ -166,37 +168,45 @@
 
         async function fetchUserProfile() {
             try {
-                const response = await fetch('http://localhost:3000/api/users/profile', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    document.getElementById('welcome-username').textContent = data.username;
-                    document.getElementById('user-full-name').textContent = data.full_name;
-                    document.getElementById('user-level').textContent = `Level ${data.level}`;
-                    document.getElementById('user-xp').textContent = `${data.xp} XP`;
-                    document.getElementById('current-level-info').textContent = `Level ${data.level}`;
+                // Data user sudah ada dari panggilan awal 'supabase.auth.getUser()'
+                document.getElementById('welcome-username').textContent = user.user_metadata.full_name?.split(' ')[0] || user.email; // Ambil nama depan
+                document.getElementById('user-full-name').textContent = user.user_metadata.full_name || user.email;
+                
+                // Ambil user_stats dari tabel 'user_stats' di Supabase Database
+                const { data: stats, error: statsError } = await supabase
+                    .from('user_stats') // Nama tabel Anda di Supabase
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .single();
 
-                    const nextLevelXP = (data.level) * 100; // XP needed for the *next* level
-                    const xpIntoCurrentLevel = data.xp % 100; // XP earned in the current level
+                if (statsError && statsError.code !== 'PGRST116') { // PGRST116 adalah "No rows found"
+                    console.error('Error fetching user stats:', statsError.message);
+                }
+
+                if (stats) {
+                    document.getElementById('user-level').textContent = `Level ${stats.level}`;
+                    document.getElementById('user-xp').textContent = `${stats.xp} XP`;
+                    document.getElementById('current-level-info').textContent = `Level ${stats.level}`;
+
+                    const nextLevelXP = (stats.level + 1) * 100;
+                    const xpIntoCurrentLevel = stats.xp % 100;
                     const progressPercentage = (xpIntoCurrentLevel / 100) * 100;
 
                     document.getElementById('next-unlock-info').textContent = `Next Level at ${nextLevelXP} XP`;
                     document.getElementById('xp-fill').style.width = `${progressPercentage}%`;
-                    document.getElementById('today-xp-current').textContent = data.xp; // Total XP
-                    document.getElementById('today-xp-total').textContent = (data.level + 1) * 100; // XP target for next level
+                    document.getElementById('today-xp-current').textContent = stats.xp; 
+                    document.getElementById('today-xp-total').textContent = nextLevelXP;
                 } else {
-                    console.error('Failed to fetch user profile:', data.message);
-                    if (response.status === 401 || response.status === 403) {
-                        alert('Session expired. Please log in again.');
-                        localStorage.removeItem('jwtToken');
-                        window.location.href = 'sign-in.html';
-                    }
+                    // Default values if no stats found for the user
+                    document.getElementById('user-level').textContent = `Level 1`;
+                    document.getElementById('user-xp').textContent = `0 XP`;
+                    document.getElementById('current-level-info').textContent = `Level 1`;
+                    document.getElementById('next-unlock-info').textContent = `Next Level at 100 XP`;
+                    document.getElementById('xp-fill').style.width = `0%`;
+                    document.getElementById('today-xp-current').textContent = `0`;
+                    document.getElementById('today-xp-total').textContent = `100`;
                 }
+
             } catch (error) {
                 console.error('Error fetching user profile:', error);
             }
@@ -204,24 +214,41 @@
             // Fetch Daily Missions
             async function fetchDailyMissions() {
                 try {
-                    const response = await fetch('http://localhost:3000/api/missions/daily', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`, // 
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    const missions = await response.json();
-                    if (response.ok) {
+                    const { data: missions, error: missionsError } = await supabase
+                        .from('daily_missions') 
+                        .select(`
+                            id,
+                            title,
+                            description,
+                            type,
+                            xp_reward,
+                            target_value,
+                            target_module_id,
+                            user_mission_progress!left(
+                                is_completed,
+                                current_progress,
+                                required_completion_count
+                            )
+                        `)
+                        .eq('user_mission_progress.user_id', user.id); // Filter untuk user saat ini
+
+                    if (missionsError) throw missionsError;
+
+                    if (missions) {
                         const missionsList = document.getElementById('daily-missions-list');
                         missionsList.innerHTML = ''; // Clear previous missions
                         let completedMissionsCount = 0;
 
                         missions.forEach(mission => {
+                            const userProgress = mission.user_mission_progress[0]; // Ambil objek progress user
+                            const isCompleted = userProgress?.is_completed || false;
+                            const currentProgress = userProgress?.current_progress || 0;
+                            const requiredCompletionCount = userProgress?.required_completion_count || 0;
+
                             const missionCard = document.createElement('div');
                             missionCard.classList.add('mission-card');
-                            if (mission.is_completed) { // 
-                                missionCard.classList.add('completed'); // Add a class for styling completed missions
+                            if (isCompleted) { 
+                                missionCard.classList.add('completed'); 
                                 completedMissionsCount++;
                             }
 
@@ -232,14 +259,38 @@
                                 <div class="mission-info">
                                     <h3 class="mission-title">${mission.title}</h3>
                                     <p class="mission-desc">${mission.description}</p>
-                                    <p class="mission-time">Time limit: Today (23:50)</p> <p class="mission-reward">Reward: ${mission.xp_reward} XP</p>
+                                    <p class="mission-time">Time limit: Today (23:59)</p> <p class="mission-reward">Reward: ${mission.xp_reward} XP</p>
                                 </div>
-                                <button class="mission-btn ${mission.is_completed ? 'completed' : 'primary'}">
-                                    ${mission.is_completed ? 'Completed' : 'Start'}
+                                <button class="mission-btn ${isCompleted ? 'completed' : 'primary'}" 
+                                        data-mission-id="${mission.id}" 
+                                        data-is-completed="${isCompleted}"
+                                        ${isCompleted || currentProgress < requiredCompletionCount ? 'disabled' : ''}>
+                                    ${isCompleted ? 'Completed' : 'Claim'}
                                 </button>
                             `;
                             missionsList.appendChild(missionCard);
                         });
+
+                        // Add event listener for "Claim" button
+                        missionsList.querySelectorAll('.mission-btn.primary').forEach(button => {
+                            button.addEventListener('click', async function() {
+                                const missionId = this.dataset.missionId;
+                                try {
+                                    // Panggil Supabase Function (RPC) untuk mengklaim misi
+                                    const { data, error } = await supabase.rpc('claim_mission', { p_mission_id: parseInt(missionId), p_user_id: user.id });
+
+                                    if (error) throw error;
+
+                                    alert(data.message);
+                                    fetchUserProfile(); // Refresh user XP and level
+                                    fetchDailyMissions(); // Refresh mission list
+                                } catch (error) {
+                                    console.error('Error claiming mission:', error.message);
+                                    alert(`Failed to claim mission: ${error.message}`);
+                                }
+                            });
+                        });
+
 
                         // Update progress indicator
                         const progressIndicator = document.getElementById('daily-mission-progress');
@@ -266,7 +317,7 @@
                         }
 
                     } else {
-                        console.error('Failed to fetch daily missions:', missions.message);
+                        console.error('No daily missions found.');
                     }
                 } catch (error) {
                     console.error('Error fetching daily missions:', error);
@@ -279,7 +330,7 @@
                         return 'fas fa-play-circle';
                     case 'complete_quiz':
                         return 'fas fa-check-circle';
-                    case 'daily_login': // Assuming you have a daily login type
+                    case 'daily_login': 
                         return 'fas fa-sign-in-alt';
                     default:
                         return 'fas fa-tasks';
@@ -289,18 +340,16 @@
             // Fetch Recommended Modules
             async function fetchRecommendedModules() {
                 try {
-                    const response = await fetch('http://localhost:3000/api/modules/recommendations', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`, // 
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    const modules = await response.json();
-                    if (response.ok) {
-                        const modulesGrid = document.getElementById('recommended-modules-grid');
-                        modulesGrid.innerHTML = ''; // Clear previous modules
+                    const { data: modules, error: modulesError } = await supabase
+                        .from('modules') 
+                        .select('*')
+                        .limit(6); 
 
+                    if (modulesError) throw modulesError;
+
+                    if (modules) {
+                        const modulesGrid = document.getElementById('recommended-modules-grid');
+                        modulesGrid.innerHTML = ''; 
                         modules.forEach(module => {
                             const moduleCard = document.createElement('div');
                             moduleCard.classList.add('module-card');
@@ -324,7 +373,7 @@
                             modulesGrid.appendChild(moduleCard);
                         });
                     } else {
-                        console.error('Failed to fetch recommended modules:', modules.message);
+                        console.error('No recommended modules found.');
                     }
                 } catch (error) {
                     console.error('Error fetching recommended modules:', error);
@@ -336,7 +385,7 @@
             fetchDailyMissions();
             fetchRecommendedModules();
         });
-    </script>
+</script>
  <script src="../JavaScript/navbar-scroll.js"></script>
  <script src="../JavaScript/mobile-toggle.js"></script>
 </body>

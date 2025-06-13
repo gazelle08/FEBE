@@ -135,26 +135,36 @@
         </div>
     </footer>
 
-    <script>
-        // Mengubah totalQuizTime menjadi 0.25 menit (15 detik / 60 detik/menit)
+<script type="module">
+  import { supabase } from '../JavaScript/supabaseClient.js';
         const totalQuizTimeSeconds = 300; 
-        let timeRemaining = totalQuizTimeSeconds; // Tetap pakai detik untuk hitungan mundur yang presisi
+        let timeRemaining = totalQuizTimeSeconds; 
         let timerInterval;
 
         let quizQuestions = [];
         let currentQuestionIndex = 0;
         let selectedAnswer = null;
-        let correctAnswersCount = 0; // Track correct answers
-        let incorrectAnswersCount = 0; // Track incorrect answers
-        let quizResults = []; // Store results for each question (isCorrect, userAnswer, correctAnswer)
+        let correctAnswersCount = 0; 
+        let incorrectAnswersCount = 0; 
+        let quizResults = []; 
+        let loggedInUser = null; // Tambahkan variabel untuk menyimpan objek user
 
         document.addEventListener('DOMContentLoaded', async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const moduleId = urlParams.get('moduleId');
-            const token = localStorage.getItem('jwtToken');
+            
+            // Mendapatkan objek user saat ini menggunakan Supabase SDK
+            const { data: { user }, error: userSessionError } = await supabase.auth.getUser();
+            
+            if (userSessionError || !user) {
+                alert('You need to be logged in to take this quiz. Please log in again.');
+                window.location.href = 'sign-in.html';
+                return;
+            }
+            loggedInUser = user; // Simpan objek user yang sudah login
 
-            if (!moduleId || !token) {
-                alert('Module ID or login token is missing. Please go back to the modules page and try again.');
+            if (!moduleId) {
+                alert('Module ID is missing. Please go back to the modules page and try again.');
                 window.location.href = 'modul.html';
                 return;
             }
@@ -168,39 +178,24 @@
             // Function to fetch quiz questions
             async function fetchQuizQuestions() {
                 try {
-                    const response = await fetch(`http://localhost:3000/api/quizzes/module/${moduleId}`, { 
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`, 
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    const data = await response.json();
+                    // Mengambil pertanyaan kuis langsung dari tabel 'quizzes' di Supabase
+                    const { data: quizzes, error: quizError } = await supabase
+                        .from('quizzes') // Asumsi nama tabel kuis Anda adalah 'quizzes'
+                        .select('*')
+                        .eq('module_id', moduleId)
+                        .order('question_order', { ascending: true }); // Asumsi ada kolom 'question_order' untuk urutan
 
-                    if (response.ok) {
-                        quizQuestions = data;
-                        if (quizQuestions.length > 0) {
-                            document.getElementById('quiz-container').classList.remove('hidden');
-                            document.getElementById('quiz-review-section').classList.add('hidden');
-                            displayQuestion(currentQuestionIndex);
-                            startTimer();
-                            renderQuestionButtons();
-                        } else {
-                            alert('No quiz questions found for this module.');
-                            window.location.href = `detail-module.html?moduleId=${moduleId}`;
-                        }
+                    if (quizError) throw quizError;
+
+                    if (quizzes && quizzes.length > 0) {
+                        quizQuestions = quizzes;
+                        document.getElementById('quiz-container').classList.remove('hidden');
+                        document.getElementById('quiz-review-section').classList.add('hidden');
+                        displayQuestion(currentQuestionIndex);
+                        startTimer();
+                        renderQuestionButtons();
                     } else {
-                        if (response.status === 403) { 
-                            alert('You must complete the module before accessing its quiz.');
-                        } else if (response.status === 404) { 
-                            alert('No quiz found for this module, or module is not yet ready for quiz.');
-                        } else if (response.status === 401) { 
-                            alert('Session expired. Please log in again.');
-                            localStorage.removeItem('jwtToken');
-                            window.location.href = 'sign-in.html';
-                        } else {
-                            alert(`Failed to load quiz: ${data.message || 'Unknown error.'}`);
-                        }
+                        alert('No quiz questions found for this module.');
                         window.location.href = `detail-module.html?moduleId=${moduleId}`;
                     }
                 } catch (error) {
@@ -225,9 +220,9 @@
 
                 let options;
                 try {
-                    options = JSON.parse(question.options);
+                    options = JSON.parse(question.options); // Asumsi options disimpan sebagai JSON string
                 } catch (e) {
-                    options = question.options;
+                    options = question.options; // Jika bukan JSON string, langsung pakai
                 }
 
                 options.forEach(option => {
@@ -238,7 +233,7 @@
                     if (prevAttempt && prevAttempt.userAnswer === option) {
                         button.classList.add('selected');
                         button.innerHTML = `<i class="fas fa-check"></i> ${option}`;
-                        selectedAnswer = option; // Re-select if navigating back
+                        selectedAnswer = option; 
                     } else {
                         button.innerHTML = `<i class="far fa-circle"></i> ${option}`;
                     }
@@ -257,7 +252,6 @@
 
                 // Update navigation button text
                 const nextButton = document.getElementById('next-question-btn');
-                // *** PERBAIKAN: Tombol Submit Quiz di Pertanyaan Terakhir ***
                 if (currentQuestionIndex === quizQuestions.length - 1) {
                     nextButton.textContent = 'Submit Quiz';
                 } else {
@@ -301,88 +295,72 @@
             async function submitAnswer() {
                 if (selectedAnswer === null) {
                     alert('Please select an answer before proceeding.');
-                    return false; // Indicate submission failed
+                    return false;
                 }
 
                 const currentQuizItem = quizQuestions[currentQuestionIndex];
-                const quizId = currentQuizItem.id;
-                const originalQuestion = currentQuizItem.question; // Store original question text
-                const originalOptions = currentQuizItem.options; // Store original options
+                const quizQuestionId = currentQuizItem.id; // ID dari pertanyaan kuis di tabel 'quizzes'
+                const originalQuestion = currentQuizItem.question;
+                const originalOptions = currentQuizItem.options;
 
                 try {
-                    const response = await fetch('http://localhost:3000/api/quizzes/submit', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            quizId: quizId,
-                            userAnswer: selectedAnswer
-                        })
+                    // Mengirim jawaban kuis menggunakan Supabase Function (RPC)
+                    const { data, error } = await supabase.rpc('submit_quiz_answer', {
+                        p_user_id: loggedInUser.id, // Menggunakan loggedInUser.id yang sudah disimpan
+                        p_quiz_question_id: parseInt(quizQuestionId),
+                        p_user_answer: selectedAnswer
                     });
 
-                    const data = await response.json();
+                    if (error) throw error;
 
-                    if (response.ok) {
-                        // Store the result for review
-                        const resultData = {
-                            questionIndex: currentQuestionIndex,
-                            questionText: originalQuestion,
-                            options: originalOptions,
-                            userAnswer: selectedAnswer,
-                            isCorrect: data.quiz_status.isCorrect,
-                            correctAnswer: data.quiz_status.correctAnswer, // This is the correct answer returned by BE
-                            xpEarned: data.quiz_status.xpEarned
-                        };
+                    // Data dari fungsi RPC akan berisi is_correct, correct_answer, xp_earned
+                    const isCorrect = data.is_correct;
+                    const correctAnswer = data.correct_answer;
+                    const xpEarned = data.xp_earned;
 
-                        const resultIndex = quizResults.findIndex(r => r.questionIndex === currentQuestionIndex);
-                        if (resultIndex > -1) {
-                            quizResults[resultIndex] = resultData;
-                        } else {
-                            quizResults.push(resultData);
-                        }
+                    const resultData = {
+                        questionIndex: currentQuestionIndex,
+                        questionText: originalQuestion,
+                        options: originalOptions,
+                        userAnswer: selectedAnswer,
+                        isCorrect: isCorrect,
+                        correctAnswer: correctAnswer,
+                        xpEarned: xpEarned
+                    };
 
-                        if (data.quiz_status.isCorrect) {
-                            correctAnswersCount++;
-                            // alert(`Correct! You earned ${data.quiz_status.xpEarned} XP.`); // Hapus alert ini
-                        } else {
-                            incorrectAnswersCount++;
-                            // alert(`Incorrect. The correct answer was: ${data.quiz_status.correctAnswer}.`); // Hapus alert ini
-                        }
-                        
-                        // Update question button status
-                        const qBtn = document.querySelector(`.question-btn[data-question-index="${currentQuestionIndex}"]`);
-                        if (qBtn) {
-                            qBtn.classList.remove('active', 'answered-correctly', 'answered-incorrectly'); // Remove active for correct styling
-                            if (data.quiz_status.isCorrect) {
-                                qBtn.classList.add('answered-correctly');
-                            } else {
-                                qBtn.classList.add('answered-incorrectly');
-                            }
-                        }
-                        return true; // Indicate submission successful
+                    const resultIndex = quizResults.findIndex(r => r.questionIndex === currentQuestionIndex);
+                    if (resultIndex > -1) {
+                        quizResults[resultIndex] = resultData;
                     } else {
-                        if (response.status === 401 || response.status === 403) {
-                            alert('Session expired. Please log in again.');
-                            localStorage.removeItem('jwtToken');
-                            window.location.href = 'sign-in.html';
-                            return false;
-                        }
-                        // alert(`Submission failed: ${data.message || 'Unknown error.'}`); // Hapus alert ini
-                        console.error('Quiz submission error:', data); // Tetap log error di console
-                        return false; // Indicate submission failed
+                        quizResults.push(resultData);
                     }
+
+                    if (isCorrect) {
+                        correctAnswersCount++;
+                    } else {
+                        incorrectAnswersCount++;
+                    }
+                    
+                    const qBtn = document.querySelector(`.question-btn[data-question-index="${currentQuestionIndex}"]`);
+                    if (qBtn) {
+                        qBtn.classList.remove('active', 'answered-correctly', 'answered-incorrectly'); 
+                        if (isCorrect) {
+                            qBtn.classList.add('answered-correctly');
+                        } else {
+                            qBtn.classList.add('answered-incorrectly');
+                        }
+                    }
+                    return true;
                 } catch (error) {
                     console.error('Error submitting quiz:', error);
-                    alert('An error occurred during quiz submission. Please try again.'); // Pertahankan alert ini untuk error jaringan
-                    return false; // Indicate submission failed
+                    alert(`An error occurred during quiz submission: ${error.message}. Please try again.`);
+                    return false;
                 }
             }
 
             // Function to show quiz results review
             function showQuizReview() {
-                clearInterval(timerInterval); // Stop the timer
+                clearInterval(timerInterval);
                 document.getElementById('quiz-container').classList.add('hidden');
                 document.getElementById('quiz-review-section').classList.remove('hidden');
 
@@ -390,7 +368,7 @@
                 document.getElementById('incorrect-answers-count').textContent = incorrectAnswersCount;
 
                 const reviewDetailsList = document.getElementById('review-details-list');
-                reviewDetailsList.innerHTML = ''; // Clear previous review items
+                reviewDetailsList.innerHTML = ''; 
 
                 quizResults.forEach(result => {
                     const reviewItem = document.createElement('div');
@@ -410,19 +388,18 @@
                         
                         // Check if this option is the user's selected answer
                         if (result.userAnswer === opt) {
-                            optionClass = 'review-user-answer'; // Apply user's answer style
+                            optionClass = 'review-user-answer'; 
                             if (result.isCorrect) {
-                                optionIcon = '<i class="fas fa-check-circle review-status-icon summary-correct"></i>'; // Correct icon for user's correct answer
+                                optionIcon = '<i class="fas fa-check-circle review-status-icon summary-correct"></i>'; 
                             } else {
-                                optionIcon = '<i class="fas fa-times-circle review-status-icon summary-incorrect"></i>'; // Incorrect icon for user's wrong answer
+                                optionIcon = '<i class="fas fa-times-circle review-status-icon summary-incorrect"></i>'; 
                             }
                         } 
                         
                         // If user's answer was incorrect, also highlight the true correct answer
-                        // Perbandingan harus sama persis dengan yang ada di database setelah perubahan import script
                         if (!result.isCorrect && String(result.correctAnswer).trim().toLowerCase() === String(opt).trim().toLowerCase()) {
-                            optionClass = 'review-correct-answer'; // Apply correct answer style
-                            optionIcon = '<i class="fas fa-check-circle review-status-icon summary-correct"></i>'; // Correct icon
+                            optionClass = 'review-correct-answer'; 
+                            optionIcon = '<i class="fas fa-check-circle review-status-icon summary-correct"></i>'; 
                         }
                         
                         optionsHtml += `<div class="review-answer ${optionClass}">${opt} ${optionIcon}</div>`;
@@ -450,7 +427,7 @@
                         displayQuestion(currentQuestionIndex);
                     } else {
                         // Quiz finished
-                        showQuizReview(); // Show results review instead of alert
+                        showQuizReview(); 
                     }
                 }
             });
@@ -473,10 +450,7 @@
                     timeRemaining -= 0.01; // Decrease by 10ms for accurate display
                 } else {
                     clearInterval(timerInterval);
-                    timerElement.textContent = "00:00.00"; // Ensure it shows 00:00.00 at end
-                    // showQuizReview(); // Show results even if time is up - already handled by next logic below
-                    // Auto-submit and review if time runs out on the last question
-                    // Or just show review if it's not the last question but time runs out
+                    timerElement.textContent = "00:00.00"; 
                     alert('Waktu habis! Kuis selesai.');
                     showQuizReview(); 
                 }
@@ -484,8 +458,8 @@
 
             function startTimer() {
                 if (timerInterval) clearInterval(timerInterval);
-                timeRemaining = totalQuizTimeSeconds; // Reset time for current quiz instance
-                timerInterval = setInterval(updateTimer, 10); // Update every 10 milliseconds
+                timeRemaining = totalQuizTimeSeconds; 
+                timerInterval = setInterval(updateTimer, 10); 
             }
 
             // Initial fetch of quiz questions

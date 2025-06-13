@@ -151,56 +151,57 @@
         </div>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
-                alert('You need to be logged in to view the dashboard.');
-                window.location.href = 'sign-in.html'; 
-                return;
-            }
+<script type="module">
+  import { supabase } from '../JavaScript/supabaseClient.js';
 
-            try {
-                const response = await fetch('http://localhost:3000/api/users/dashboard', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`, 
-                        'Content-Type': 'application/json'
-                    }
-                });
+  document.addEventListener('DOMContentLoaded', async function() {
+    // Check session
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (!session || error) {
+      alert('You need to be logged in to view the dashboard.');
+      window.location.href = 'sign-in.html';
+      return;
+    }
 
-                const data = await response.json();
+    // Fetch user data
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      
+      // Populate dashboard with user data
+      document.querySelector('.profile-name').textContent = user.user_metadata.full_name || user.email;
+      document.querySelector('.profile-class').textContent = user.user_metadata.education_level || 'N/A';
+      
+      // You would fetch additional user stats from your database here
+      // Example:
+      const { data: stats, error: statsError } = await supabase
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (stats) {
+        document.querySelector('.level-badge span').textContent = `Level ${stats.level}`;
+        document.getElementById('xp-count').textContent = `${stats.xp} XP`;
+        document.getElementById('modules-completed').textContent = stats.completed_modules;
+        document.getElementById('time-spent').textContent = `${stats.minutes_watched} Minutes`;
+      }
+      
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
 
-                if (response.ok) {
-                    document.querySelector('.profile-name').textContent = data.username; 
-                    document.querySelector('.profile-class').textContent = data.education_level || 'N/A'; 
-                    document.querySelector('.level-badge span').textContent = `Level ${data.level}`; 
-                    document.getElementById('xp-count').textContent = `${data.xp} XP`; // Total XP
-                    document.getElementById('modules-completed').textContent = data.total_modules_completed; 
-                    document.getElementById('time-spent').textContent = `${data.total_videos_watched * 10} Minutes`; 
-                } else {
-                    if (response.status === 401 || response.status === 403) { 
-                        alert('Session expired or invalid. Please log in again.');
-                        localStorage.removeItem('jwtToken');
-                        window.location.href = 'sign-in.html';
-                    } else if (response.status === 404) { 
-                        alert('User data not found.');
-                    } else {
-                        alert(`Failed to load dashboard data: ${data.message || 'Unknown error.'}`);
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching dashboard data:', error);
-                alert('An error occurred while loading your dashboard. Please try again.');
-            }
-
-            document.querySelector('.logout-btn').addEventListener('click', function() {
-                localStorage.removeItem('jwtToken'); 
-                alert('You have been logged out.');
-                window.location.href = 'sign-in.html'; 
-            });
-        });
-    </script>
+    // Logout button
+    document.querySelector('.logout-btn').addEventListener('click', async function() {
+      const { error } = await supabase.auth.signOut();
+      localStorage.removeItem('supabaseSession');
+      localStorage.removeItem('supabaseUser');
+      window.location.href = 'sign-in.html';
+    });
+  });
+</script>
     <script src="../JavaScript/navbar-scroll.js"></script>
     <script src="../JavaScript/mobile-toggle.js"></script>
 </body>

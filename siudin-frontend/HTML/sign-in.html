@@ -70,63 +70,67 @@
         </section>
     </main>
     <script src="../JavaScript/toggle.js"></script>
-    <script>
-        document.querySelector('.registration-form').addEventListener('submit', async function(event) {
-            event.preventDefault(); // Prevent default form submission
+<script type="module">
+  import { supabase } from '../JavaScript/supabaseClient.js';
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+  document.querySelector('.registration-form').addEventListener('submit', async function(event) {
+    event.preventDefault();
 
-            if (!email || !password) {
-                alert('Please enter your email and password.');
-                return;
-            }
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-            try {
-                const response = await fetch('http://localhost:3000/api/auth/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email,
-                        password
-                    }),
-                });
+    if (!email || !password) {
+      alert('Please enter your email and password.');
+      return;
+    }
 
-                const data = await response.json();
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-                if (response.ok) { // Check if response status is 2xx
-                    localStorage.setItem('jwtToken', data.token); // Store the JWT token 
-                    // You might want to store user data too, e.g., localStorage.setItem('userData', JSON.stringify(data.user));
-                    alert(data.message); // "Login successful." 
-                    window.location.href = 'dashboard.html'; // Redirect to dashboard or home page
-                } else {
-                    if (response.status === 400) { // Bad Request
-                        alert('Login failed: Missing email or password.');
-                    } else if (response.status === 401) { // Unauthorized 
-                        alert('Login failed: Invalid credentials.');
-                    } else if (response.status === 500) { // Internal Server Error 
-                        alert('Login failed: An unexpected server error occurred.');
-                    } else {
-                        alert(`Login failed: ${data.message || 'Unknown error.'}`);
-                    }
-                }
-            } catch (error) {
-                console.error('Error during login:', error);
-                alert('An error occurred during login. Please try again.');
-            }
-        });
+      if (error) throw error;
+      
+      // Store session data (Supabase SDK akan mengelola refresh token secara internal)
+      // data.session.access_token adalah JWT token
+      localStorage.setItem('supabaseSession', JSON.stringify(data.session));
+      localStorage.setItem('supabaseUser', JSON.stringify(data.user));
+      // Simpan access_token sebagai jwtToken agar konsisten dengan panggilan fetch yang sudah ada (sebelum migrasi penuh)
+      localStorage.setItem('jwtToken', data.session.access_token);
+      
+      alert('Login successful!');
+      window.location.href = 'dashboard.html';
+    } catch (error) {
+      console.error('Error:', error.message);
+      alert(`Login failed: ${error.message}`);
+    }
+  });
 
-        // This is for handling the OAuth callbacks.
-        // In a real application, the backend would redirect to the frontend URL with the token.
-        // You'd then parse the token from the URL and store it.
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        if (token) {
-            localStorage.setItem('jwtToken', token);
-            window.location.href = 'dashboard.html'; // Redirect after successful OAuth login
-        }
-    </script>
+  // Handle OAuth callbacks
+  const urlParams = new URLSearchParams(window.location.search);
+  const access_token = urlParams.get('access_token');
+  const refresh_token = urlParams.get('refresh_token');
+  
+  if (access_token && refresh_token) {
+    try {
+      const { data, error } = await supabase.auth.setSession({
+        access_token,
+        refresh_token
+      });
+      
+      if (error) throw error;
+      
+      localStorage.setItem('supabaseSession', JSON.stringify(data.session));
+      localStorage.setItem('supabaseUser', JSON.stringify(data.user));
+      localStorage.setItem('jwtToken', data.session.access_token);
+      
+      window.location.href = 'dashboard.html';
+    } catch (error) {
+      console.error('Error setting session:', error);
+      alert('Error during OAuth login');
+    }
+  }
+</script>
 </body>
 </html>

@@ -111,61 +111,46 @@
         </section>
     </main>
     <script src="../JavaScript/toggle.js"></script>
-    <script>
-        document.querySelector('.registration-form').addEventListener('submit', async function(event) {
-            event.preventDefault(); // Prevent default form submission
+<script type="module">
+  import { supabase } from '../JavaScript/supabaseClient.js';
 
-            const fullName = document.getElementById('fullName').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const dateOfBirth = document.getElementById('birthDate').value;
-            const educationLevel = document.querySelector('input[name="education"]:checked')?.value;
-            const gender = document.querySelector('input[name="gender"]:checked')?.value;
+  document.querySelector('.registration-form').addEventListener('submit', async function(event) {
+    event.preventDefault();
 
-            // Basic validation
-            if (!fullName || !email || !password || !dateOfBirth || !educationLevel || !gender) {
-                alert('Please fill in all required fields.');
-                return;
-            }
+    const fullName = document.getElementById('fullName').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const dateOfBirth = document.getElementById('birthDate').value;
+    const educationLevel = document.querySelector('input[name="education"]:checked')?.value;
+    const gender = document.querySelector('input[name="gender"]:checked')?.value;
 
-            try {
-                const response = await fetch('http://localhost:3000/api/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fullName,
-                        email,
-                        password,
-                        dateOfBirth,
-                        educationLevel,
-                        gender
-                    }),
-                });
+    if (!fullName || !email || !password || !dateOfBirth || !educationLevel || !gender) {
+      alert('Harap isi semua field yang wajib diisi!');
+      return;
+    }
 
-                const data = await response.json();
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            date_of_birth: dateOfBirth,
+            education_level: educationLevel,
+            gender
+          }
+        }
+      });
 
-                if (response.ok) { // Check if response status is 2xx
-                    alert(data.message); // "User registered successfully." 
-                    window.location.href = 'sign-in.html'; // Redirect to login page
-                } else {
-                    // Handle specific error codes
-                    if (response.status === 400) { // Bad Request 
-                        alert('Registration failed: Missing required fields or invalid data.');
-                    } else if (response.status === 409) { // Conflict 
-                        alert('Registration failed: Email or username already exists.');
-                    } else if (response.status === 500) { // Internal Server Error 
-                         alert('Registration failed: An unexpected error occurred on the server.');
-                    } else {
-                        alert(`Registration failed: ${data.message || 'Unknown error.'}`);
-                    }
-                }
-            } catch (error) {
-                console.error('Error during registration:', error);
-                alert('An error occurred during registration. Please try again.');
-            }
-        });
-    </script>
+      if (error) throw error;
+      alert('Registrasi berhasil! Silakan cek email untuk verifikasi.');
+      window.location.href = 'sign-in.html';
+    } catch (error) {
+      console.error('Error:', error.message);
+      alert(`Registrasi gagal: ${error.message}`);
+    }
+  });
+</script>
 </body>
 </html>

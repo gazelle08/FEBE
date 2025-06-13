@@ -128,10 +128,11 @@
         </div>
     </footer>
 
-    <script>
+<script type="module">
+  import { supabase } from '../JavaScript/supabaseClient.js';
         document.addEventListener('DOMContentLoaded', async function() {
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
+            const { data: { user }, error: userSessionError } = await supabase.auth.getUser();
+            if (userSessionError || !user) {
                 alert('You need to be logged in to view your missions.');
                 window.location.href = 'sign-in.html';
                 return;
@@ -139,42 +140,54 @@
 
             async function fetchUserProfile() {
                 try {
-                    const response = await fetch('http://localhost:3000/api/users/profile', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        document.getElementById('welcome-username-missions').textContent = data.username;
-                        document.getElementById('user-xp-missions').textContent = `${data.xp} XP`;
-                        document.getElementById('user-level-missions').textContent = `Level ${data.level}`;
+                    // Data user sudah ada dari panggilan awal
+                    document.getElementById('welcome-username-missions').textContent = user.user_metadata.full_name?.split(' ')[0] || user.email;
+                    
+                    const { data: stats, error: statsError } = await supabase
+                        .from('user_stats')
+                        .select('xp, level')
+                        .eq('user_id', user.id)
+                        .single();
+
+                    if (statsError && statsError.code !== 'PGRST116') {
+                        console.error('Error fetching user stats for missions:', statsError.message);
+                    }
+                    if (stats) {
+                        document.getElementById('user-xp-missions').textContent = `${stats.xp} XP`;
+                        document.getElementById('user-level-missions').textContent = `Level ${stats.level}`;
                     } else {
-                        console.error('Failed to fetch user profile:', data.message);
-                        if (response.status === 401 || response.status === 403) {
-                            alert('Session expired. Please log in again.');
-                            localStorage.removeItem('jwtToken');
-                            window.location.href = 'sign-in.html';
-                        }
+                        document.getElementById('user-xp-missions').textContent = `0 XP`;
+                        document.getElementById('user-level-missions').textContent = `Level 1`;
                     }
                 } catch (error) {
-                    console.error('Error fetching user profile:', error);
+                    console.error('Error fetching user profile for missions:', error);
                 }
             }
 
             async function fetchDailyMissions() {
                 try {
-                    const response = await fetch('http://localhost:3000/api/missions/daily', {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    const missions = await response.json();
-                    if (response.ok) {
+                    // Ambil daily missions dari tabel 'daily_missions'
+                    // Join dengan tabel 'user_mission_progress' untuk status completion
+                    const { data: missions, error: missionsError } = await supabase
+                        .from('daily_missions')
+                        .select(`
+                            id,
+                            title,
+                            description,
+                            type,
+                            xp_reward,
+                            target_value,
+                            user_mission_progress!left(
+                                is_completed,
+                                current_progress,
+                                required_completion_count
+                            )
+                        `)
+                        .eq('user_mission_progress.user_id', user.id); // Filter berdasarkan user_id
+
+                    if (missionsError) throw missionsError;
+
+                    if (missions) {
                         const completedList = document.getElementById('completed-missions-list');
                         const uncompletedList = document.getElementById('uncompleted-missions-list');
                         completedList.innerHTML = ''; 
@@ -184,20 +197,30 @@
                         const totalDailyMissions = missions.length;
 
                         missions.forEach(mission => {
+                            const userProgress = mission.user_mission_progress[0]; // Ambil objek progress user
+                            const isCompleted = userProgress?.is_completed || false;
+                            const currentProgress = userProgress?.current_progress || 0;
+                            const requiredCompletionCount = userProgress?.required_completion_count || 0;
+
                             const missionCard = document.createElement('div');
                             missionCard.classList.add('challenge-item');
                             
-                            if (!mission.is_completed) {
-                                missionCard.setAttribute('onclick', `window.location.href='modul.html?missionId=${mission.mission_id}'`); 
+                            // Arahkan ke modul jika misi belum selesai dan bisa dimulai
+                            if (!isCompleted && mission.type === 'watch_video' && mission.target_module_id) {
+                                missionCard.setAttribute('onclick', `window.location.href='detail-module.html?moduleId=${mission.target_module_id}'`);
+                            } else if (!isCompleted && mission.type === 'complete_quiz' && mission.target_module_id) {
+                                missionCard.setAttribute('onclick', `window.location.href='quiz-page.html?moduleId=${mission.target_module_id}'`);
                             }
 
                             const missionContent = `
                                 <div class="challenge-content">
                                     <span class="challenge-name">${mission.title}</span>
+                                    <p class="challenge-desc">${mission.description}</p>
+                                    ${mission.type === 'watch_video' || mission.type === 'complete_quiz' ? `<p class="progress-info">${currentProgress} / ${requiredCompletionCount} completed</p>` : ''}
                                 </div>
                             `;
 
-                            if (mission.is_completed) {
+                            if (isCompleted) {
                                 missionCard.classList.add('completed');
                                 missionCard.innerHTML = missionContent + `
                                     <div class="challenge-status">
@@ -209,7 +232,8 @@
                             } else {
                                 missionCard.classList.add('uncompleted');
                                 missionCard.innerHTML = missionContent + `
-                                    <button class="claim-btn" data-mission-id="${mission.mission_id}" data-is-daily="true" ${mission.current_progress >= mission.required_completion_count ? '' : 'disabled'}>
+                                    <button class="claim-btn" data-mission-id="${mission.id}" ${currentProgress < requiredCompletionCount ? 'disabled' : ''}>
+                                        Claim ${mission.xp_reward} XP
                                     </button>
                                 `;
                                 uncompletedList.appendChild(missionCard);
@@ -220,28 +244,19 @@
                             button.addEventListener('click', async function(event) {
                                 event.stopPropagation(); 
                                 const missionIdToClaim = this.dataset.mission_id;
-                                const isDaily = this.dataset.isDaily === 'true'; 
-
+                                
                                 try {
-                                    const claimResponse = await fetch('http://localhost:3000/api/missions/complete', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Authorization': `Bearer ${token}`,
-                                            'Content-Type': 'application/json'
-                                        },
-                                        body: JSON.stringify({ missionId: parseInt(missionIdToClaim), isDailyMission: isDaily })
-                                    });
-                                    const claimData = await claimResponse.json();
-                                    if (claimResponse.ok) {
-                                        alert(claimData.message);
-                                        fetchUserProfile();
-                                        fetchDailyMissions();
-                                    } else {
-                                        alert(`Failed to claim mission: ${claimData.message || 'Unknown error.'}`);
-                                    }
+                                    // Panggil Supabase Function untuk mengklaim misi
+                                    const { data, error } = await supabase.rpc('claim_mission', { mission_id: parseInt(missionIdToClaim), user_id: user.id });
+
+                                    if (error) throw error;
+
+                                    alert(data.message);
+                                    fetchUserProfile();
+                                    fetchDailyMissions();
                                 } catch (error) {
-                                    console.error('Error claiming mission:', error);
-                                    alert('An error occurred while claiming the mission.');
+                                    console.error('Error claiming mission:', error.message);
+                                    alert(`Failed to claim mission: ${error.message}`);
                                 }
                             });
                         });
@@ -256,7 +271,7 @@
                         document.querySelector('.progress-text').textContent = `${progressPercentage}%`;
 
                     } else {
-                        console.error('Failed to fetch daily missions:', missions.message);
+                        console.error('No daily missions found.');
                     }
                 } catch (error) {
                     console.error('Error fetching daily missions:', error);
@@ -280,7 +295,7 @@
             fetchUserProfile();
             fetchDailyMissions();
         });
-    </script>
+</script>
     <script src="../JavaScript/navbar-scroll.js"></script>
     <script src="../JavaScript/mobile-toggle.js"></script>
 </body>

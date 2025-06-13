@@ -14,8 +14,8 @@ Thumbs.db
 .vscode/
 
 # Compiled JavaScript (if you transpile)
-/dist/
-/build/
+dist/
+build/
 
 # Database specific files
 *.sqlite

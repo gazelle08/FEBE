@@ -1,10 +1,29 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta http-equiv="refresh" content="0; URL=HTML/landing-page.html" />
-    <title>Redirecting...</title>
-  </head>
-  <body>
-    <p>Redirecting to <a href="HTML/landing-page.html">landing-page.html</a></p>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studin - Redirect</title>
+  <script type="module">
+    import { supabase } from '/JavaScript/supabaseClient.js';
+    
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        window.location.href = 'HTML/dashboard.html';
+      } else {
+        window.location.href = 'HTML/landing-page.html';
+      }
+    }
+        checkAuth();
+  </script>
+</head>
+<body>
+  <div class="redirect-container">
+    <h1>Memuat Aplikasi Studin...</h1>
+    <div class="spinner"></div>
+    <p>Jika tidak otomatis redirect, <a href="HTML/landing-page.html">klik disini</a></p>
+  </div>
+</body>
 </html>

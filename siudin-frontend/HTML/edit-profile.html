@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Profile - SiUdin</title>
-    <link rel="stylesheet" href="../CSS/edit-profile.css">
+    <title>SiUdin - Video Pengantar Untuk Pecahan</title>
+    <link rel="stylesheet" href="../CSS/detail-module.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <header class="header">
@@ -21,14 +23,14 @@
             <ul class="nav-menu">
                 <li><a href="../HTML/home.html" class="nav-link">Home</a></li>
                 <li class="dropdown">
-                    <a href="#" class="nav-link">Fitur<i class="fas fa-chevron-down"></i></a>
+                    <a href="#" class="nav-link active">Fitur<i class="fas fa-chevron-down"></i></a>
                     <ul class="dropdown-menu">
                         <li><a href="../HTML/modul.html" class="dropdown-item">Module</a></li>
                         <li><a href="../HTML/missions.html" class="dropdown-item">Mission</a></li>
                         <li><a href="../HTML/leaderboard.html" class="dropdown-item">Leaderboard</a></li>
                     </ul>
                 </li>
-                <li><a href="../HTML/dashboard.html" class="nav-link active">Dashboard</a></li>
+                <li><a href="../HTML/dashboard.html" class="nav-link">Dashboard</a></li>
             </ul>
             <div class="nav-actions">
                 <button class="notification-btn">
@@ -41,70 +43,69 @@
         </nav>
     </header>
 
-    <main class="main-content">
-        <div class="container-profile">
-            <h1 class="page-title">Profile Settings</h1>
-            
-            <form class="profile-form">
-                <div class="avatar-section">
-                    <div class="avatar-container">
-                        <img src="../Asset/avatar-dashboard.png" alt="Profile Avatar" class="profile-avatar">
-                    </div>
-                </div>
+    <main>
+        <section class="video-section">
+            <h2 class="video-title" id="module-video-title"></h2>
+            <div class="video-container">
+                <iframe 
+                    id="module-video-iframe"
+                    src="" 
+                    title="Video Pengantar Untuk Pecahan" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </section>
 
-                <div class="form-group">
-                    <label for="fullName" class="form-label">Nama Lengkap</label>
-                    <input type="text" id="fullName" class="form-input" value="">
+        <section class="content-section">
+            <div class="description-container">
+                <h3 class="section-title">Description</h3>
+                <p class="description-text" id="module-description">
+                </p>
+                <div class="video-meta">
+                    <p><strong>Durasi Video:</strong> <span id="module-duration">N/A</span></p>
+                    <p><strong>Tingkat Kesulitan:</strong> <span id="module-difficulty"></span></p>
+                    <p><strong>Hingga <span id="module-xp">50XP</span></strong></p>
                 </div>
+                <button class="quiz-btn" id="start-quiz-btn">Start Quiz</button>
+            </div>
 
-                <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" class="form-input" value="">
-                </div>
-
-                <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
-                    <div class="input-wrapper">
-                        <input type="password" id="password" class="form-input" value="********" readonly> <button type="button" class="input-icon" onclick="togglePassword()">
-                            <i class="fas fa-eye" id="passwordToggle"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="birthDate" class="form-label">Tanggal Lahir</label>
-                    <div class="input-wrapper">
-                        <input type="text" id="birthDate" class="form-input" value="" readonly>
-                        <span class="input-icon">
-                            <i class="fas fa-calendar-alt"></i>
-                        </span>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="education" class="form-label">Jenjang Pendidikan</label>
-                    <div class="dropdown-wrapper">
-                        <button type="button" class="dropdown-btn" onclick="toggleDropdown()">
-                            <span id="selectedEducation">Pilih Jenjang Pendidikan</span>
-                            <i class="fas fa-chevron-down" id="dropdownArrow"></i>
-                        </button>
-                        <div class="dropdown-menu" id="educationDropdown">
-                            <div class="dropdown-item" data-value="Kelas 7 - Kurikulum Merdeka">Kelas 7 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" data-value="Kelas 8 - Kurikulum Merdeka">Kelas 8 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" data-value="Kelas 9 - Kurikulum Merdeka">Kelas 9 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" data-value="Kelas 10 - Kurikulum Merdeka">Kelas 10 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" data-value="Kelas 11 - Kurikulum Merdeka">Kelas 11 - Kurikulum Merdeka</div>
-                            <div class="dropdown-item" data-value="Kelas 12 - Kurikulum Merdeka">Kelas 12 - Kurikulum Merdeka</div>
+            <div class="journey-container">
+                <div class="journey-box">
+                    <h3 class="journey-title">Your Math Journey</h3>
+                    <div class="lesson completed">
+                        <span class="check-icon"><i class="fas fa-check-circle"></i></span>
+                        <div class="lesson-info">
+                            <p class="lesson-code">MTH001:</p>
+                            <p class="lesson-name">Pengantar Untuk Pecahan</p>
                         </div>
                     </div>
+                    <div class="lesson next">
+                        <span class="next-icon"><i class="fas fa-arrow-right"></i></span>
+                        <p class="lesson-name">Next Video</p>
+                    </div>
+                    <div class="lesson locked">
+                        <span class="lock-icon"><i class="fas fa-lock"></i></span>
+                        <p class="lesson-name">Persamaan Linear dan Variabel</p>
+                    </div>
                 </div>
 
-                <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="window.location.href='home.html'">Back To Home</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                <div class="question-box">
+                    <div class="question-header">
+                        <i class="fas fa-comments"></i>
+                        <h3 class="question-title">What did you learn from this video?</h3>
+                    </div>
+                    <div class="question-content">
+                        <p>Ask Question Bellow</p>
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+        </section>
+
+        <section class="navigation-section">
+            <button class="nav-btn back" onclick="window.location.href='modul.html'">Back To Module</button>
+        </section>
     </main>
 
     <footer class="footer">
@@ -146,137 +147,125 @@
         </div>
     </footer>
 
-    <script>
+<script type="module">
+  // PASTIKAN BARIS INI ADA DI SINI
+  import { supabase } from '../JavaScript/supabaseClient.js';
+
         document.addEventListener('DOMContentLoaded', async function() {
-            const token = localStorage.getItem('jwtToken');
-            if (!token) {
-                alert('You need to be logged in to edit your profile.');
-                window.location.href = 'sign-in.html';
+            const urlParams = new URLSearchParams(window.location.search);
+            const moduleId = urlParams.get('moduleId');
+            
+            // Mendapatkan user saat ini menggunakan Supabase SDK
+            const { data: { user }, error: userSessionError } = await supabase.auth.getUser();
+
+            if (!moduleId) {
+                alert('Module ID is missing from the URL.');
+                window.location.href = 'modul.html';
                 return;
             }
 
-            // Fetch user profile data
-            try {
-                const response = await fetch('http://localhost:3000/api/users/profile', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('fullName').value = data.full_name; // 
-                    document.getElementById('email').value = data.email; // 
-                    document.getElementById('birthDate').value = data.date_of_birth; // YYYY-MM-DD 
-                    document.getElementById('selectedEducation').textContent = data.education_level || 'Pilih Jenjang Pendidikan'; // 
-                } else {
-                    if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
-                        alert('Session expired or invalid. Please log in again.');
-                        localStorage.removeItem('jwtToken');
-                        window.location.href = 'sign-in.html';
-                    } else if (response.status === 404) { // Not Found 
-                        alert('User profile not found.');
-                    } else {
-                        alert(`Failed to load profile data: ${data.message || 'Unknown error.'}`);
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching profile data:', error);
-                alert('An error occurred while loading your profile. Please try again.');
-            }
-
-            // Handle form submission for saving changes
-            document.querySelector('.profile-form').addEventListener('submit', async function(event) {
-                event.preventDefault();
-
-                const updatedData = {
-                    full_name: document.getElementById('fullName').value,
-                    email: document.getElementById('email').value,
-                    // password is not handled directly here, would be a separate change password function
-                    date_of_birth: document.getElementById('birthDate').value,
-                    education_level: document.getElementById('selectedEducation').textContent === 'Pilih Jenjang Pendidikan' ? '' : document.getElementById('selectedEducation').textContent
-                };
-
+            async function fetchModuleDetails() {
                 try {
-                    const response = await fetch('http://localhost:3000/api/users/profile', {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `Bearer ${token}`, // 
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(updatedData)
-                    });
+                    // Mengambil data modul langsung dari tabel 'modules' di Supabase
+                    const { data: module, error: moduleError } = await supabase
+                        .from('modules') // Nama tabel modul Anda
+                        .select('*')
+                        .eq('id', moduleId)
+                        .single(); // Ambil satu modul saja
 
-                    const data = await response.json();
+                    if (moduleError && moduleError.code !== 'PGRST116') { // PGRST116 adalah "No rows found"
+                        throw moduleError;
+                    }
 
-                    if (response.ok) { // 200 OK 
-                        alert(data.message); // "Profile updated successfully." 
-                        // Optionally, update the displayed data immediately or redirect
-                    } else {
-                        if (response.status === 400) { // Bad Request 
-                            alert('Update failed: Invalid data provided.');
-                        } else if (response.status === 401 || response.status === 403) { // Unauthorized or Forbidden 
-                            alert('Session expired or invalid. Please log in again.');
-                            localStorage.removeItem('jwtToken');
-                            window.location.href = 'sign-in.html';
-                        } else if (response.status === 409) { // Conflict 
-                            alert('Update failed: Email already in use by another user.');
+                    if (module) {
+                        document.getElementById('module-video-title').textContent = module.title;
+                        document.getElementById('module-description').textContent = module.description;
+                        document.getElementById('module-difficulty').textContent = module.difficulty;
+
+                        if (module.video_url) {
+                            const urlParts = module.video_url.split('/');
+                            let videoId = urlParts[urlParts.length - 1]; 
+                            if (videoId.includes('?')) {
+                                videoId = videoId.split('?')[0];
+                            }
+                            if (videoId.includes('#')) {
+                                videoId = videoId.split('#')[0];
+                            }
+                            // Perbaiki URL embed YouTube ke format yang benar
+                            const youtubeEmbedUrl = `https://www.youtube.com/embed/${videoId}`; 
+                            document.getElementById('module-video-iframe').src = youtubeEmbedUrl;
                         } else {
-                            alert(`Update failed: ${data.message || 'Unknown error.'}`);
+                            document.getElementById('module-video-iframe').src = '';
+                            console.warn('No video URL available for this module.');
                         }
+                        
+                        // Pastikan kolom xp_reward dan duration_minutes ada di tabel Supabase Anda
+                        document.getElementById('module-xp').textContent = `${module.xp_reward || 50} XP`; 
+                        document.getElementById('module-duration').textContent = `Estimasi: ${module.duration_minutes || 10} Menit`; 
+                    } else {
+                        alert('Module not found.');
+                        window.location.href = 'modul.html';
                     }
                 } catch (error) {
-                    console.error('Error updating profile:', error);
-                    alert('An error occurred while updating your profile. Please try again.');
+                    console.error('Error fetching module details:', error);
+                    alert('An error occurred while loading module details.');
+                    window.location.href = 'modul.html';
+                }
+            }
+
+            async function logVideoWatch() {
+                // Pastikan user login untuk log video watch
+                if (!user) { // Menggunakan objek user yang didapatkan dari Supabase SDK
+                    console.warn('Cannot log video watch: User not logged in.');
+                    return;
+                }
+                try {
+                    // Panggil Supabase Function (RPC) untuk log video watch
+                    const { data, error } = await supabase.rpc('log_video_watch', { 
+                        p_user_id: user.id, 
+                        p_module_id: parseInt(moduleId) 
+                    });
+
+                    if (error) throw error;
+
+                    console.log('Video watch logged successfully:', data.message); 
+                } catch (error) {
+                    console.error('Error logging video watch:', error);
+                }
+            }
+
+            document.getElementById('start-quiz-btn').addEventListener('click', async function() {
+                // Pastikan user login untuk memulai kuis
+                if (!user) { // Menggunakan objek user yang didapatkan dari Supabase SDK
+                    alert('You need to be logged in to start a quiz.');
+                    window.location.href = 'sign-in.html';
+                    return;
+                }
+
+                try {
+                    // Panggil Supabase Function (RPC) untuk memeriksa ketersediaan kuis
+                    const { data: quizStatus, error: quizError } = await supabase.rpc('check_quiz_availability', { 
+                        p_user_id: user.id, 
+                        p_module_id: parseInt(moduleId) 
+                    });
+
+                    if (quizError) throw quizError;
+
+                    if (quizStatus.can_start_quiz) { // Asumsi fungsi mengembalikan objek dengan properti can_start_quiz
+                        window.location.href = `quiz-page.html?moduleId=${moduleId}`;
+                    } else {
+                        alert(quizStatus.message); // Pesan dari fungsi Supabase
+                    }
+                } catch (error) {
+                    console.error('Error checking quiz availability:', error);
+                    alert('An error occurred while trying to start the quiz. Please try again.');
                 }
             });
-        });
 
-        function togglePassword() {
-            const passwordInput = document.getElementById('password');
-            const passwordToggle = document.getElementById('passwordToggle');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                passwordToggle.classList.remove('fa-eye');
-                passwordToggle.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                passwordToggle.classList.remove('fa-eye-slash');
-                passwordToggle.classList.add('fa-eye');
-            }
-        }
-
-        function toggleDropdown() {
-            const dropdown = document.getElementById('educationDropdown');
-            const arrow = document.getElementById('dropdownArrow');
-            
-            dropdown.classList.toggle('show');
-            arrow.classList.toggle('rotate');
-        }
-
-        document.querySelectorAll('.dropdown-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const value = this.getAttribute('data-value');
-                selectEducation(value);
-            });
-        });
-
-        function selectEducation(value) {
-            document.getElementById('selectedEducation').textContent = value;
-            document.getElementById('educationDropdown').classList.remove('show');
-            document.getElementById('dropdownArrow').classList.remove('rotate');
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const dropdownWrapper = document.querySelector('.dropdown-wrapper');
-            if (dropdownWrapper && !dropdownWrapper.contains(event.target)) {
-                document.getElementById('educationDropdown').classList.remove('show');
-                document.getElementById('dropdownArrow').classList.remove('rotate');
+            await fetchModuleDetails();
+            // Panggil logVideoWatch hanya jika user sudah login dan tidak ada error sesi
+            if (user && !userSessionError) { 
+                logVideoWatch(); 
             }
         });
     </script>

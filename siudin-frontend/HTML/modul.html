@@ -129,9 +129,15 @@
         </div>
     </footer>
 
-    <script>
+<script type="module">
+    // PASTIKAN BARIS INI ADA DI SINI
+    import { supabase } from '../JavaScript/supabaseClient.js';
         document.addEventListener('DOMContentLoaded', async function() {
-            const token = localStorage.getItem('jwtToken'); 
+            // Mengambil user saat ini (tidak perlu 'token' manual lagi untuk Supabase SDK)
+            const { data: { user }, error: userSessionError } = await supabase.auth.getUser(); 
+
+            // Jika modul bisa diakses tanpa login, tidak perlu redirect di sini.
+            // Namun, jika nanti ada fitur progress/completion, Anda akan butuh objek 'user'.
 
             const subjectGrids = {
                 'Matematika': document.getElementById('mathematics-modules-grid'),
@@ -143,42 +149,38 @@
 
             async function fetchModules(searchQuery = '') {
                 try {
-                    let url = 'http://localhost:3000/api/modules'; 
-                    let queryParams = [];
+                    // Mengambil semua modul dari tabel 'modules' menggunakan Supabase SDK
+                    let query = supabase.from('modules').select('*');
 
-                    // Reset all grids
+                    if (searchQuery) {
+                        // Tambahkan filter pencarian jika ada query
+                        query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,topic.ilike.%${searchQuery}%`);
+                    }
+
+                    const { data: modules, error: modulesError } = await query;
+
+                    // Reset semua grid
                     for (const key in subjectGrids) {
                         subjectGrids[key].innerHTML = '';
                     }
 
-                    const response = await fetch(url + (queryParams.length > 0 ? '?' + queryParams.join('&') : ''), {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...(token && { 'Authorization': `Bearer ${token}` }) 
-                        }
-                    });
-                    const modules = await response.json();
+                    if (modulesError) throw modulesError;
 
-                    if (response.ok) {
+                    if (modules) {
                         modules.forEach(module => {
-                            if (searchQuery && !module.title.toLowerCase().includes(searchQuery.toLowerCase()) && 
-                                !module.description.toLowerCase().includes(searchQuery.toLowerCase()) &&
-                                !module.topic.toLowerCase().includes(searchQuery.toLowerCase())) {
-                                return; 
-                            }
-
                             const moduleCard = document.createElement('article');
                             moduleCard.classList.add('module-card');
                             if (module.topic) {
                                 moduleCard.classList.add(module.topic.toLowerCase().replace(/\s/g, '-'));
                             }
 
-                            const isCompleted = false; 
+                            // TODO: Dapatkan status completion modul dari tabel 'user_module_progress' jika ada
+                            const isCompleted = false; // Placeholder, perlu diisi dari DB
                             const progressText = isCompleted ? '100% Complete' : 'Not Started';
                             
-                            const isVideoModule = module.video_url && module.video_url.includes('youtube.com');
-                            const moduleTypeInfo = isVideoModule ? 'Video' : '';
+                            // Perbaikan untuk URL YouTube: `module.video_url.includes('youtube.com/')`
+                            const isVideoModule = module.video_url && (module.video_url.includes('youtube.com/') || module.video_url.includes('youtu.be/'));
+                            const moduleTypeInfo = isVideoModule ? 'Video' : 'Materi';
 
 
                             moduleCard.innerHTML = `
@@ -202,14 +204,14 @@
                             }
                         });
                     } else {
-                        console.error('Failed to fetch modules:', modules.message);
+                        console.error('No modules found.');
                     }
                 } catch (error) {
                     console.error('Error fetching modules:', error);
                 }
             }
 
-            fetchModules();
+            fetchModules(); // Panggil fungsi untuk mengambil dan menampilkan modul
 
             document.getElementById('search-button').addEventListener('click', () => {
                 const searchQuery = document.getElementById('search-input').value;

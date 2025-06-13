@@ -123,48 +123,66 @@
         </div>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            const token = localStorage.getItem('jwtToken'); // Get token if leaderboard is protected
+<script type="module">
+  import { supabase } from '../JavaScript/supabaseClient.js';
+          document.addEventListener('DOMContentLoaded', async function() {
+            const { data: { user }, error: userSessionError } = await supabase.auth.getUser();
+
+            if (userSessionError) {
+                alert('Session expired. Please log in again.');
+                localStorage.removeItem('jwtToken'); // Hapus token lama
+                window.location.href = 'sign-in.html';
+                return;
+            }
 
             async function fetchLeaderboard() {
                 try {
-                    const headers = {
-                        'Content-Type': 'application/json'
-                    };
-                    if (token) {
-                        headers['Authorization'] = `Bearer ${token}`; // Add token if required
-                    }
+                    // Mengambil data user_stats dan join dengan auth.users untuk mendapatkan nama pengguna
+                    // Langsung query Supabase, tidak lagi pakai fetch ke localhost:3000
+                    const { data, error } = await supabase
+                        .from('user_stats') // Nama tabel yang menyimpan XP dan level Anda
+                        .select(`
+                            xp,
+                            level,
+                            user_id,
+                            users:auth.users( // Menggunakan relasi untuk mendapatkan metadata user dari tabel auth.users
+                                raw_user_meta_data,
+                                email
+                            )
+                        `)
+                        .order('xp', { ascending: false }) // Urutkan berdasarkan XP tertinggi
+                        .limit(10); // Ambil 10 teratas
 
-                    const response = await fetch('http://localhost:3000/api/leaderboard', { // Fetch from your backend
-                        method: 'GET',
-                        headers: headers
-                    });
+                    if (error) throw error;
 
-                    const data = await response.json();
-
-                    if (response.ok) {
+                    if (data) {
                         const leaderboardCard = document.querySelector('.leaderboard-card');
                         leaderboardCard.innerHTML = ''; // Clear existing dummy data
 
+                        // Fungsi helper untuk mendapatkan username dari data auth.users
+                        const formatUsername = (userAuthData) => {
+                            // Coba ambil full_name dari raw_user_meta_data, jika tidak ada, pakai email
+                            return userAuthData?.raw_user_meta_data?.full_name?.split(' ')[0] || userAuthData?.email || 'User';
+                        };
+
                         // Update top 3 illustration
                         if (data[0]) {
-                            document.getElementById('top1-username').textContent = data[0].username;
+                            document.getElementById('top1-username').textContent = formatUsername(data[0].users);
                             document.getElementById('top1-score').textContent = `${data[0].xp} XP (Level ${data[0].level})`;
-                            // Optionally update avatar image for top 3
+                            // Anda bisa menambahkan logika untuk mengubah gambar avatar di sini jika ingin menggunakan avatar unik
                             // document.querySelector('.character-1 .avatar').style.backgroundImage = `url('/path/to/${data[0].username}-avatar.png')`;
                         }
                         if (data[1]) {
-                            document.getElementById('top2-username').textContent = data[1].username;
+                            document.getElementById('top2-username').textContent = formatUsername(data[1].users);
                             document.getElementById('top2-score').textContent = `${data[1].xp} XP (Level ${data[1].level})`;
                         }
                         if (data[2]) {
-                            document.getElementById('top3-username').textContent = data[2].username;
+                            document.getElementById('top3-username').textContent = formatUsername(data[2].users);
                             document.getElementById('top3-score').textContent = `${data[2].xp} XP (Level ${data[2].level})`;
                         }
 
                         // Populate the main leaderboard list (starting from rank 1)
-                        data.forEach((user, index) => {
+                        data.forEach((userEntry, index) => {
                             const rank = index + 1;
                             const leaderboardItem = document.createElement('div');
                             leaderboardItem.classList.add('leaderboard-item', `rank-${rank}`);
@@ -185,20 +203,14 @@
                                         ${crownHtml}
                                         <div class="avatar-small" style="background-image: url('../Asset/avatar-dashboard.png');"></div> 
                                     </div>
-                                    <span class="username">${user.username}</span>
+                                    <span class="username">${formatUsername(userEntry.users)}</span>
                                 </div>
-                                <span class="score">${user.xp} XP (Level ${user.level})</span>
+                                <span class="score">${userEntry.xp} XP (Level ${userEntry.level})</span>
                             `;
                             leaderboardCard.appendChild(leaderboardItem);
                         });
                     } else {
-                        if (response.status === 401 || response.status === 403) {
-                            alert('Session expired. Please log in again.');
-                            localStorage.removeItem('jwtToken');
-                            window.location.href = 'sign-in.html';
-                        } else {
-                            alert(`Failed to load leaderboard: ${data.message || 'Unknown error.'}`);
-                        }
+                        console.warn('No leaderboard data found.');
                     }
                 } catch (error) {
                     console.error('Error fetching leaderboard data:', error);
